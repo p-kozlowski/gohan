@@ -149,6 +149,7 @@ func (env *Environment) ClearEnvironment() {
 	env.dbFile.Close()
 	os.Remove(toDelete)
 	schema.ClearManager()
+	env.Environment.ClearEnvironment()
 }
 
 // CheckAllMockCallsMade check if all declared mock calls were made

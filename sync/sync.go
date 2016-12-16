@@ -26,6 +26,7 @@ type Sync interface {
 	Update(path, json string) error
 	Delete(path string) error
 	Watch(path string, responseChan chan *Event, stopChan chan bool, revision int64) error
+	Close()
 }
 
 //Event is a struct for Watch response

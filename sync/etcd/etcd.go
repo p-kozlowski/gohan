@@ -222,3 +222,7 @@ func (s *Sync) Watch(path string, responseChan chan *sync.Event, stopChan chan b
 		}
 	}
 }
+
+func (s *Sync) Close()  {
+	// nothing to do
+}

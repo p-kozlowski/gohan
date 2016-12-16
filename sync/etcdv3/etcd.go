@@ -329,3 +329,7 @@ func (s *Sync) Watch(path string, responseChan chan *sync.Event, stopChan chan b
 		return err
 	}
 }
+
+func (s *Sync) Close()  {
+	s.etcdClient.Close()
+}

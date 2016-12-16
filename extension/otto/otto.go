@@ -247,6 +247,10 @@ func (env *Environment) GetOrCreateTransaction(value otto.Value) (transaction.Tr
 	return tx, true, nil
 }
 
+func (env *Environment) ClearEnvironment()  {
+	env.Sync.Close()
+}
+
 func throwOtto(call *otto.FunctionCall, exceptionName string, arguments ...interface{}) {
 	exception, _ := call.Otto.Call("new "+exceptionName, nil, arguments...)
 	panic(exception)
