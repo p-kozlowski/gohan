@@ -5,7 +5,7 @@ Extensions has properties:
 
 - id identity of the code
 - code contents of a code
-- code_type javascript, go and Gohan script (DSL) are supported
+- code_type javascript, goext, go and Gohan script (DSL) are supported
 - URL placement of code. Currently, file://, http:// and https:// schemes are supported
 - path resource path to execute code
 
@@ -182,8 +182,7 @@ Example Code
 
   executed when you receive amqp/snmp/cron notification
 
-
-# Go extension
+# Go extension (callback)
 
 You can implement Gohan extension by native go.
 You can use "go" for code_type and specify your callback id in code.
@@ -209,3 +208,16 @@ Also, you can register go struct & call it from javascript.
 We have exampleapp with comments in exampleapp directory.
 You can also, import github.com/cloudwan/server module and
 have your own RunServer method to have whole custom route written in go.
+
+# Goext extension (plugin)
+
+You can implement Gohan extension by native go, as an external plugin
+in a shared library.
+
+```yaml
+  extensions:
+  - code: exampleapp_callback
+    code_type: goext
+    id: example
+    path: .*
+```

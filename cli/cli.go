@@ -68,7 +68,8 @@ func Run(name, usage, version string) {
 		getInitDbCommand(),
 		getConvertCommand(),
 		getServerCommand(),
-		getTestExtesionsCommand(),
+		getTestExtensionsCommand(),
+		getTestGoExtensionsCommand(),
 		getMigrateCommand(),
 		getResyncCommand(),
 		getTemplateCommand(),
@@ -375,7 +376,7 @@ func getServerCommand() cli.Command {
 	}
 }
 
-func getTestExtesionsCommand() cli.Command {
+func getTestExtensionsCommand() cli.Command {
 	return cli.Command{
 		Name:      "test_extensions",
 		ShortName: "test_ex",
@@ -392,6 +393,23 @@ documentation for detail information about writing tests.`,
 			cli.IntFlag{Name: "parallel, p", Value: runtime.NumCPU(), Usage: "Allow parallel execution of test functions"},
 		},
 		Action: framework.TestExtensions,
+	}
+}
+
+func getTestGoExtensionsCommand() cli.Command {
+	return cli.Command{
+		Name:      "test_go_extensions",
+		ShortName: "test_go_ex",
+		Usage:     "Run Go extension tests",
+		Description: `
+Run Go extensions tests in a gohan-server-like environment.`,
+		Flags: []cli.Flag{
+			cli.BoolFlag{Name: "verbose, v", Usage: "Print logs for passing tests"},
+			cli.StringFlag{Name: "config-file,c", Value: "", Usage: "Config file path"},
+			cli.StringFlag{Name: "run-test,r", Value: "", Usage: "Run only tests matching specified regex"},
+			cli.IntFlag{Name: "parallel, p", Value: runtime.NumCPU(), Usage: "Allow parallel execution of test functions"},
+		},
+		Action: framework.TestGoExtensions,
 	}
 }
 
