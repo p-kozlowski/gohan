@@ -71,7 +71,8 @@ func Run(name, usage, version string) {
 		getInitDbCommand(),
 		getConvertCommand(),
 		getServerCommand(),
-		getTestExtesionsCommand(),
+		getTestExtensionsCommand(),
+		getTestGoExtensionsCommand(),
 		getMigrateCommand(),
 		getResyncCommand(),
 		getTemplateCommand(),
@@ -378,7 +379,7 @@ func getServerCommand() cli.Command {
 	}
 }
 
-func getTestExtesionsCommand() cli.Command {
+func getTestExtensionsCommand() cli.Command {
 	return cli.Command{
 		Name:      "test_extensions",
 		ShortName: "test_ex",
@@ -431,6 +432,23 @@ func migrationSubcommandWithLock(action func(*cli.Context)) func(*cli.Context) {
 	}
 }
 
+func getTestGoExtensionsCommand() cli.Command {
+	return cli.Command{
+		Name:      "test_go_extensions",
+		ShortName: "test_go_ex",
+		Usage:     "Run Go extension tests",
+		Description: `
+Run Go extensions tests in a gohan-server-like environment.`,
+		Flags: []cli.Flag{
+			cli.BoolFlag{Name: "verbose, v", Usage: "Print logs for passing tests"},
+			cli.StringFlag{Name: "config-file,c", Value: "", Usage: "Config file path"},
+			cli.StringFlag{Name: "run-test,r", Value: "", Usage: "Run only tests matching specified regex"},
+			cli.IntFlag{Name: "parallel, p", Value: runtime.NumCPU(), Usage: "Allow parallel execution of test functions"},
+		},
+		Action: framework.TestGoExtensions,
+	}
+}
+
 func getMigrateSubcommand(subcmd, usage string) cli.Command {
 	return cli.Command{
 		Name:  subcmd,
@@ -466,6 +484,10 @@ func getMigrateSubcommandWithPostMigrateEvent(subcmd, usage string) cli.Command 
 			cli.BoolFlag{Name: lockWithEtcd, Usage: "Enable if ETCD should be used to synchronize migrations"},
 		},
 		Action: migrationSubcommandWithLock(func(context *cli.Context) {
+			configFile := context.String(ConfigFileFlag)
+			if migration.LoadConfig(configFile) != nil {
+				return
+			}
 			config := util.GetConfig()
 
 			if migration.Run(subcmd, context.Args()) != nil {

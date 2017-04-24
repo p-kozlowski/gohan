@@ -45,7 +45,7 @@ func (manager *Manager) RegisterEnvironment(schemaID string, env Environment) er
 	defer manager.mu.Unlock()
 
 	if _, ok := manager.environments[schemaID]; ok {
-		return fmt.Errorf("Environment already registered for this schema")
+		return fmt.Errorf("Environment already registered for schema '%s'", schemaID)
 	}
 	manager.environments[schemaID] = env
 	return nil
@@ -73,6 +73,13 @@ func (manager *Manager) GetEnvironment(schemaID string) (env Environment, ok boo
 		env = env.Clone()
 	}
 	return
+}
+
+// HandleEventInAllEnvironments handles the event in all registered environments
+func (manager *Manager) HandleEventInAllEnvironments(context map[string]interface{}, event string, schemaID string) {
+	for name := range manager.environments {
+		HandleEvent(context, manager.environments[name], event, schemaID)
+	}
 }
 
 //GetManager gets manager
