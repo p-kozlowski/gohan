@@ -120,7 +120,7 @@ func (thisSchema *Schema) structToResource(resource interface{}) (*schema.Resour
 }
 
 func (thisSchema *Schema) assignField(name string, field reflect.Value, value interface{}) error {
-	if field.Kind() == reflect.Struct {
+	if field.Kind() == reflect.Struct || field.Kind() == reflect.Slice {
 		mapJSON, err := json.Marshal(value)
 		if err != nil {
 			return err
@@ -256,8 +256,8 @@ func (thisSchema *Schema) Fetch(id string, res interface{}, context goext.Contex
 	if err != nil {
 		return err
 	}
-	resourceType, hasOpenTransaction := GlobResourceTypes[thisSchema.rawSchema.ID]
-	if !hasOpenTransaction {
+	resourceType, ok := GlobResourceTypes[thisSchema.rawSchema.ID]
+	if !ok {
 		return fmt.Errorf("No type registered for schema title: %s", thisSchema.rawSchema.ID)
 	}
 	resource := reflect.ValueOf(res)
