@@ -73,7 +73,7 @@ func (t *Transaction) Delete(schema goext.ISchema, resourceID interface{}) error
 	return t.tx.Delete(t.findRawSchema(schema.ID()), resourceID)
 }
 func (t *Transaction) Fetch(schema goext.ISchema, filter goext.Filter) (goext.RawResource, error) {
-	res, err := t.tx.Fetch(t.findRawSchema(schema.ID()), transaction.Filter(filter))
+	res, err := t.tx.Fetch(t.findRawSchema(schema.ID()), transaction.Filter(filter), nil)
 	if err != nil {
 		return nil, err
 	}
