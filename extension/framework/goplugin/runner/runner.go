@@ -33,6 +33,7 @@ import (
 	"github.com/cloudwan/gohan/sync/noop"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+	"github.com/cloudwan/gohan/extension"
 )
 
 const (
@@ -121,6 +122,10 @@ func (goTestRunner *GoTestRunner) Run() error {
 		}
 
 		goTestSuite.env = goplugin.NewEnvironment("test"+pluginFileName, goTestSuite.db, &middleware.FakeIdentity{}, noop.NewSync())
+		manager := extension.GetManager()
+		if err := manager.RegisterEnvironment("", goTestSuite.env); err != nil {
+			return err
+		}
 		goTestSuite.path = filepath.Dir(pluginFileName)
 
 		goTestSuite.manager = schema.GetManager()
