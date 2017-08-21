@@ -45,7 +45,7 @@ func (manager *Manager) RegisterEnvironment(schemaID string, env Environment) er
 	defer manager.mu.Unlock()
 
 	if _, ok := manager.environments[schemaID]; ok {
-		return fmt.Errorf("Environment already registered for this schema")
+		return fmt.Errorf("Environment already registered for schema '%s'", schemaID)
 	}
 	manager.environments[schemaID] = env
 	return nil
