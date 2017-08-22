@@ -299,6 +299,7 @@ func (thisEnvironment *Environment) LoadExtensionsForPath(extensions []*schema.E
 
 func (thisEnvironment *Environment) dispatchSchemaEvent(prioritizedSchemaHandlers PrioritizedSchemaHandlers, sch Schema, event string, context map[string]interface{}) error {
 	thisEnvironment.Logger().Debugf("Starting event: %s, schema: %s", event, sch.rawSchema.ID)
+	defer thisEnvironment.Logger().Debugf("Finished event: %s, schema: %s", event, sch.rawSchema.ID)
 	if resource, err := thisEnvironment.resourceFromContext(sch, context); err == nil {
 		for priority, schemaEventHandlers := range prioritizedSchemaHandlers {
 			for index, schemaEventHandler := range schemaEventHandlers {
