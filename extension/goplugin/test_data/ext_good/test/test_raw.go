@@ -17,6 +17,6 @@ package test
 
 // Test is a test resource
 type Test struct {
-    ID string `db:"id"`
-    Description string `db:"description"`
+	ID          string `db:"id"`
+	Description string `db:"description"`
 }

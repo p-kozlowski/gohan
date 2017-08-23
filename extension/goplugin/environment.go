@@ -632,3 +632,7 @@ func (thisEnvironment *Environment) Clone() extension.Environment {
 		initFns:   thisEnvironment.initFns,
 	}
 }
+
+func (env *Environment) IsEventHandled(event string, context map[string]interface{}) bool {
+	return true
+}

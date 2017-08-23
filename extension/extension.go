@@ -30,6 +30,7 @@ type Environment interface {
 	LoadExtensionsForPath(extensions []*schema.Extension, timeLimit time.Duration, timeLimits []*schema.PathEventTimeLimit, path string) error
 	HandleEvent(event string, context map[string]interface{}) error
 	Clone() Environment
+	IsEventHandled(event string, context map[string]interface{}) bool
 }
 
 //Manager takes care of mapping schemas to Environments.
