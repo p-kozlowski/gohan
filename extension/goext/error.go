@@ -31,17 +31,17 @@ func (e Error) Error() string {
 
 var (
 	// ErrorBadRequest indicates bad request error
-	ErrorBadRequest          = ErrorCode(400)
+	ErrorBadRequest = ErrorCode(400)
 
 	// ErrorConflict indicates conflict error
-	ErrorConflict            = ErrorCode(409)
+	ErrorConflict = ErrorCode(409)
 
 	// ErrorNotFound indicates not found error
-	ErrorNotFound            = ErrorCode(404)
+	ErrorNotFound = ErrorCode(404)
 
 	// ErrorInternalServerError indicates internal server error
 	ErrorInternalServerError = ErrorCode(500)
 
 	// ErrorNotImplemented indicates not implemented error
-	ErrorNotImplemented      = ErrorCode(501)
+	ErrorNotImplemented = ErrorCode(501)
 )

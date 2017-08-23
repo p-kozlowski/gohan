@@ -100,7 +100,7 @@ func init() {
 
 				if s, ok := context["schema"]; ok {
 					schemaID = s.(*schema.Schema).ID
-				}else{
+				} else {
 					log.Panic("gohan_trigger_event: schema not found")
 				}
 

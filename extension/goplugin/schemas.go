@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/cloudwan/gohan/db/transaction"
 	"github.com/cloudwan/gohan/extension/goext"
 	"github.com/cloudwan/gohan/schema"
 	"github.com/jmoiron/sqlx/reflectx"
 	"github.com/twinj/uuid"
 	"strings"
-	"github.com/cloudwan/gohan/db/transaction"
 )
 
 var (

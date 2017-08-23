@@ -27,9 +27,9 @@ func convertEvent(event *sync.Event) *goext.Event {
 	}
 
 	return &goext.Event{
-		Action: event.Action,
-		Key: event.Key,
-		Data: event.Data,
+		Action:   event.Action,
+		Key:      event.Key,
+		Data:     event.Data,
 		Revision: event.Revision,
 	}
 }
@@ -40,15 +40,15 @@ func convertNode(node *sync.Node) *goext.Node {
 	}
 
 	return &goext.Node{
-		Key: node.Key,
-		Value: node.Value,
+		Key:      node.Key,
+		Value:    node.Value,
 		Revision: node.Revision,
 		Children: convertNodes(node.Children),
 	}
 }
 
 func convertNodes(nodes []*sync.Node) []*goext.Node {
-	result := []*goext.Node {}
+	result := []*goext.Node{}
 
 	for _, node := range nodes {
 		result = append(result, convertNode(node))
@@ -96,7 +96,7 @@ func (thisSync *Sync) Watch(path string, timeout time.Duration, revision int64) 
 	//	log.Debug("Received otto interrupt in gohan_sync_watch when watching on %s since revision %d", path, revision)
 	//	interrupt()
 	case event := <-eventChan:
-		return []*goext.Event { convertEvent(event) }, nil
+		return []*goext.Event{convertEvent(event)}, nil
 	case <-time.NewTimer(timeout).C:
 		//log.Debug("Watch on %s since revision %d timed out after %d [ms]", path, revision, timeoutMsec)
 		return nil, nil

@@ -334,6 +334,11 @@ func (env *Environment) Clone() ext.Environment {
 	return clone
 }
 
+func (env *Environment) IsEventHandled(event string, context map[string]interface{}) bool {
+	// FIXME
+	return true
+}
+
 //GetOrCreateTransaction gets transaction from otto value or creates new is otto value is null
 func (env *Environment) GetOrCreateTransaction(value otto.Value) (transaction.Transaction, bool, error) {
 	if !value.IsNull() {

@@ -79,3 +79,7 @@ func (env *Environment) Clone() ext.Environment {
 	clone.goCallbacks = env.goCallbacks
 	return clone
 }
+
+func (env *Environment) IsEventHandled(event string, context map[string]interface{}) bool {
+	return true
+}
