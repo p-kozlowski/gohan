@@ -19,13 +19,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/cloudwan/gohan/db/transaction"
 	"github.com/cloudwan/gohan/extension/goext"
 	"github.com/cloudwan/gohan/schema"
 	"github.com/jmoiron/sqlx/reflectx"
 	"github.com/twinj/uuid"
-	"strings"
 )
 
 var (
@@ -91,20 +91,36 @@ func (thisSchema *Schema) structToMap(resource interface{}) map[string]interface
 
 	mapper := reflectx.NewMapper("db")
 
+	structMap := mapper.TypeMap(reflect.TypeOf(resource))
+	resourceValue := reflect.ValueOf(resource)
+
 	for _, property := range thisSchema.rawSchema.Properties {
 		field := property.ID
-		v := mapper.FieldByName(reflect.ValueOf(resource), property.ID)
+
+		fi, ok := structMap.Names[property.ID]
+		if !ok {
+			panic(fmt.Sprintf("property %s not found in %+v", property.ID, resource))
+		}
+
+		v := reflectx.FieldByIndexesReadOnly(resourceValue, fi.Index)
 		val := v.Interface()
 		if field == "id" && v.String() == "" {
 			id := uuid.NewV4().String()
 			fieldsMap[field] = id
 			v.SetString(id)
 		} else if strings.Contains(v.Type().String(), "goext.Null") {
+			//TODO: fixme use names instead of indexes
 			valid := v.Field(1).Bool()
 			if valid {
 				fieldsMap[field] = v.Field(0).Interface()
 			} else {
 				fieldsMap[field] = nil
+			}
+		} else if v.Kind() == reflect.Ptr {
+			if v.IsNil() {
+				fieldsMap[field] = nil
+			} else {
+				fieldsMap[field] = val
 			}
 		} else {
 			fieldsMap[field] = val
@@ -120,7 +136,7 @@ func (thisSchema *Schema) structToResource(resource interface{}) (*schema.Resour
 }
 
 func (thisSchema *Schema) assignField(name string, field reflect.Value, value interface{}) error {
-	if field.Kind() == reflect.Struct || field.Kind() == reflect.Slice {
+	if field.Kind() == reflect.Struct || field.Kind() == reflect.Slice || field.Kind() == reflect.Ptr {
 		mapJSON, err := json.Marshal(value)
 		if err != nil {
 			return err
@@ -388,7 +404,6 @@ func (thisSchema *Schema) Update(resource interface{}, context goext.Context) er
 	if !isPointer(resource) {
 		return NotPointerErr
 	}
-
 	var tx goext.ITransaction
 	var resourceData *schema.Resource
 	var err error
@@ -405,7 +420,6 @@ func (thisSchema *Schema) Update(resource interface{}, context goext.Context) er
 	for k, v := range context {
 		contextCopy[k] = v
 	}
-
 	contextCopy.WithResource(thisSchema.structToMap(resource)).
 		WithResourceID(resourceData.ID()).
 		WithSchemaID(thisSchema.ID())
