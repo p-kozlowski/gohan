@@ -145,7 +145,7 @@ func (handler *stringHandler) encode(property *schema.Property, data interface{}
 	switch t := data.(type) {
 	case goext.NullString:
 		if t.Valid {
-			return t.String, nil
+			return t.Value, nil
 		}
 		return nil, nil
 	}
@@ -165,7 +165,7 @@ func (handler *boolHandler) encode(property *schema.Property, data interface{}) 
 	switch t := data.(type) {
 	case goext.NullBool:
 		if t.Valid {
-			return t.Bool, nil
+			return t.Value, nil
 		}
 		return nil, nil
 	}
@@ -232,7 +232,7 @@ func (handler *integerHandler) encode(property *schema.Property, data interface{
 	switch t := data.(type) {
 	case goext.NullInt:
 		if t.Valid {
-			return t.Int, nil
+			return t.Value, nil
 		}
 		return nil, nil
 	}

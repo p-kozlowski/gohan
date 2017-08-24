@@ -45,32 +45,32 @@ type Base struct {
 
 // NullString represents a nullable string
 type NullString struct {
-	String string
-	Valid  bool
+	Value string
+	Valid bool
 }
 
 // NullBool represents a nullable bool
 type NullBool struct {
-	Bool  bool
+	Value bool
 	Valid bool
 }
 
 // NullInt represents a nullable int
 type NullInt struct {
-	Int   int
+	Value int
 	Valid bool
 }
 
 // NullFloat represents a nullable float
 type NullFloat struct {
-	Float float64
+	Value float64
 	Valid bool
 }
 
 // MarshalJSON marshals a nullable string to byte buffer
 func (ns NullString) MarshalJSON() ([]byte, error) {
 	if ns.Valid {
-		return json.Marshal(ns.String)
+		return json.Marshal(ns.Value)
 	}
 	return json.Marshal(false)
 }
@@ -86,7 +86,7 @@ func (ns *NullString) UnmarshalJSON(b []byte) error {
 		ns.Valid = valid
 		return nil
 	}
-	ns.String = s
+	ns.Value = s
 	ns.Valid = true
 	return nil
 }
@@ -94,7 +94,7 @@ func (ns *NullString) UnmarshalJSON(b []byte) error {
 // MarshalJSON marshals a nullable bool to byte buffer
 func (nb NullBool) MarshalJSON() ([]byte, error) {
 	if nb.Valid {
-		return json.Marshal(nb.Bool)
+		return json.Marshal(nb.Value)
 	}
 	return json.Marshal(false)
 }
@@ -110,7 +110,7 @@ func (nb *NullBool) UnmarshalJSON(b []byte) error {
 		nb.Valid = valid
 		return nil
 	}
-	nb.Bool = val
+	nb.Value = val
 	nb.Valid = true
 	return nil
 }
@@ -118,7 +118,7 @@ func (nb *NullBool) UnmarshalJSON(b []byte) error {
 // MarshalJSON marshals a nullable int to byte buffer
 func (ni NullInt) MarshalJSON() ([]byte, error) {
 	if ni.Valid {
-		return json.Marshal(ni.Int)
+		return json.Marshal(ni.Value)
 	}
 	return json.Marshal(false)
 }
@@ -134,7 +134,7 @@ func (ni *NullInt) UnmarshalJSON(b []byte) error {
 		ni.Valid = valid
 		return nil
 	}
-	ni.Int = i
+	ni.Value = i
 	ni.Valid = true
 	return nil
 }
@@ -142,7 +142,7 @@ func (ni *NullInt) UnmarshalJSON(b []byte) error {
 // MarshalJSON marshals a nullable float to byte buffer
 func (nf NullFloat) MarshalJSON() ([]byte, error) {
 	if nf.Valid {
-		return json.Marshal(nf.Float)
+		return json.Marshal(nf.Value)
 	}
 	return json.Marshal(false)
 }
@@ -158,7 +158,7 @@ func (nf *NullFloat) UnmarshalJSON(b []byte) error {
 		nf.Valid = valid
 		return nil
 	}
-	nf.Float = f
+	nf.Value = f
 	nf.Valid = true
 	return nil
 }

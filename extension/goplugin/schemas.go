@@ -21,7 +21,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/cloudwan/gohan/db/transaction"
 	"github.com/cloudwan/gohan/extension/goext"
 	"github.com/cloudwan/gohan/schema"
 	"github.com/jmoiron/sqlx/reflectx"
@@ -110,10 +109,9 @@ func (thisSchema *Schema) structToMap(resource interface{}) map[string]interface
 			fieldsMap[field] = id
 			v.SetString(id)
 		} else if strings.Contains(v.Type().String(), "goext.Null") {
-			//TODO: fixme use names instead of indexes
-			valid := v.Field(1).Bool()
+			valid := v.FieldByName("Valid").Bool()
 			if valid {
-				fieldsMap[field] = v.Field(0).Interface()
+				fieldsMap[field] = v.FieldByName("Value").Interface()
 			} else {
 				fieldsMap[field] = nil
 			}
