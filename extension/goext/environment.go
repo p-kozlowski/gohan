@@ -162,3 +162,33 @@ func (nf *NullFloat) UnmarshalJSON(b []byte) error {
 	nf.Valid = true
 	return nil
 }
+
+func MakeNullString(value string) NullString {
+	return NullString{
+		Value: value,
+		Valid: true,
+	}
+}
+
+func MakeNullBool(value bool) NullBool {
+	return NullBool{
+		Value: value,
+		Valid: true,
+	}
+}
+
+
+func MakeNullInt(value int) NullInt {
+	return NullInt{
+		Value: value,
+		Valid: true,
+	}
+}
+
+
+func MakeNullFloat(value float64) NullFloat {
+	return NullFloat{
+		Value: value,
+		Valid: true,
+	}
+}
