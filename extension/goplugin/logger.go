@@ -18,6 +18,7 @@ package goplugin
 import (
 	"github.com/cloudwan/gohan/extension/goext"
 	l "github.com/cloudwan/gohan/log"
+	"fmt"
 )
 
 const logModule = "[goext]"
@@ -29,6 +30,7 @@ type Logger struct {
 
 func (thisLogger *Logger) dispatchLog(module string, level goext.Level, format string) {
 	logger := l.NewLoggerForModule(module)
+	format = fmt.Sprintf("[%s] %s", thisLogger.environment.traceID, format)
 
 	switch level {
 	case goext.LevelCritical:
@@ -50,6 +52,7 @@ func (thisLogger *Logger) dispatchLog(module string, level goext.Level, format s
 
 func (thisLogger *Logger) dispatchLogf(module string, level goext.Level, format string, args ...interface{}) {
 	logger := l.NewLoggerForModule(module)
+	format = fmt.Sprintf("[%s] %s", thisLogger.environment.traceID, format)
 
 	switch level {
 	case goext.LevelCritical:
