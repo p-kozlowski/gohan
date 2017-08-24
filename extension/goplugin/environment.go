@@ -31,6 +31,7 @@ import (
 	"github.com/cloudwan/gohan/schema"
 	"github.com/cloudwan/gohan/server/middleware"
 	"github.com/cloudwan/gohan/sync"
+	"github.com/twinj/uuid"
 )
 
 var log = logger.NewLogger()
@@ -106,6 +107,8 @@ type Environment struct {
 
 	initFnRaw plugin.Symbol
 	initFns   []func(goext.IEnvironment) error
+
+	traceID string
 }
 
 // NewEnvironment create new gohan extension rawEnvironment based on context
@@ -144,6 +147,15 @@ func (thisEnvironment *Environment) Database() goext.IDatabase {
 	return thisEnvironment.extDatabase
 }
 
+//bind sets environment bindings
+func (thisEnvironment *Environment) bind() {
+	thisEnvironment.extCore = NewCore(thisEnvironment)
+	thisEnvironment.extLogger = NewLogger(thisEnvironment)
+	thisEnvironment.extSchemas = NewSchemas(thisEnvironment)
+	thisEnvironment.extSync = NewSync(thisEnvironment)
+	thisEnvironment.extDatabase = NewDatabase(thisEnvironment)
+}
+
 // Start starts already loaded environment
 func (thisEnvironment *Environment) Start() error {
 	var err error
@@ -169,12 +181,11 @@ func (thisEnvironment *Environment) Start() error {
 	// Manager
 	thisEnvironment.manager = schema.GetManager()
 
-	// Bind
-	thisEnvironment.extCore = NewCore(thisEnvironment)
-	thisEnvironment.extLogger = NewLogger(thisEnvironment)
-	thisEnvironment.extSchemas = NewSchemas(thisEnvironment)
-	thisEnvironment.extSync = NewSync(thisEnvironment)
-	thisEnvironment.extDatabase = NewDatabase(thisEnvironment)
+	// bind
+	thisEnvironment.bind()
+
+	// Generating TraceID
+	thisEnvironment.traceID = uuid.NewV4().String()
 
 	// Init
 	log.Debug("Start golang extension: %s", thisEnvironment.source)
@@ -290,6 +301,8 @@ func (thisEnvironment *Environment) LoadExtensionsForPath(extensions []*schema.E
 }
 
 func (thisEnvironment *Environment) dispatchSchemaEvent(prioritizedSchemaHandlers PrioritizedSchemaHandlers, sch Schema, event string, context map[string]interface{}) error {
+	thisEnvironment.Logger().Debugf("Starting event: %s, schema: %s", event, sch.rawSchema.ID)
+	defer thisEnvironment.Logger().Debugf("Finished event: %s, schema: %s", event, sch.rawSchema.ID)
 	if resource, err := thisEnvironment.resourceFromContext(sch, context); err == nil {
 		for priority, schemaEventHandlers := range prioritizedSchemaHandlers {
 			for index, schemaEventHandler := range schemaEventHandlers {
@@ -310,7 +323,6 @@ func (thisEnvironment *Environment) dispatchSchemaEvent(prioritizedSchemaHandler
 // HandleEvent handles an event
 func (thisEnvironment *Environment) HandleEvent(event string, context map[string]interface{}) error {
 	context["event_type"] = event
-
 	// dispatch to schema handlers
 	if schemaPrioritizedSchemaHandlers, ok := GlobSchemaHandlers[event]; ok {
 		if iSchemaID, ok := context["schema_id"]; ok {
@@ -603,16 +615,9 @@ func (thisEnvironment *Environment) Reset() {
 
 // Clone makes a clone of the rawEnvironment
 func (thisEnvironment *Environment) Clone() extension.Environment {
-	return &Environment{
+	env := &Environment{
 		source:          thisEnvironment.source,
 		beforeStartInit: thisEnvironment.beforeStartInit,
-
-		// extension
-		extCore:     thisEnvironment.extCore,
-		extLogger:   thisEnvironment.extLogger,
-		extSchemas:  thisEnvironment.extSchemas,
-		extSync:     thisEnvironment.extSync,
-		extDatabase: thisEnvironment.extDatabase,
 
 		// internals
 		name:  thisEnvironment.name,
@@ -630,7 +635,12 @@ func (thisEnvironment *Environment) Clone() extension.Environment {
 
 		initFnRaw: thisEnvironment.initFnRaw,
 		initFns:   thisEnvironment.initFns,
+
+		traceID: uuid.NewV4().String(),
 	}
+	env.bind()
+
+	return env
 }
 
 func (env *Environment) IsEventHandled(event string, context map[string]interface{}) bool {
