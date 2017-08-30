@@ -47,7 +47,7 @@ var _ = Describe("Environment", func() {
 			It("should not load plugin with wrong file extension", func() {
 				loaded, err := env.Load("/wrong/extension.not-so", nil)
 				Expect(loaded).To(BeFalse())
-				Expect(err).To(Equal(fmt.Errorf("golang extensions source code must be a *.so file, source: /wrong/extension.not-so")))
+				Expect(err).To(Equal(fmt.Errorf("golang extensions plugin must be a *.so file, file: /wrong/extension.not-so")))
 			})
 
 			It("should not load plugin from non-existing file", func() {
