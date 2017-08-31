@@ -596,6 +596,10 @@ func (thisSchema *Schema) DeleteRaw(filter goext.Filter, context goext.Context) 
 		return err
 	}
 
+	if x.Elem().Len() == 0 {
+		return fmt.Errorf("resource not found")
+	}
+
 	x = x.Elem()
 	mapper := reflectx.NewMapper("db")
 	for i := 0; i < x.Len(); i++ {
