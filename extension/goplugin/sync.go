@@ -95,7 +95,7 @@ func (thisSync *Sync) Watch(path string, timeout time.Duration, revision int64) 
 	select {
 	case event := <-eventChan:
 		return []*goext.Event{convertEvent(event)}, nil
-	case <-time.NewTimer(timeout).C:
+	case <-time.After(timeout):
 		return nil, nil
 	case err := <-errorChan:
 		return nil, err
