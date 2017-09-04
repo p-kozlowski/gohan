@@ -75,6 +75,7 @@ var _ = Describe("Transaction", func() {
 			createdResource = map[string]interface{}{
 				"id":          "some-id",
 				"description": "description",
+				"subobject":   map[string]interface{}{},
 			}
 		})
 
@@ -97,6 +98,14 @@ var _ = Describe("Transaction", func() {
 		})
 
 		It("Fetch previously created resource", func() {
+			Expect(tx.Create(testSchema, createdResource)).To(Succeed())
+			returnedResource, err := tx.Fetch(testSchema, goext.Filter{"id": createdResource["id"]})
+			Expect(err).To(BeNil())
+			Expect(createdResource).To(Equal(returnedResource))
+		})
+
+		It("Fetch previously created resource with subobject", func() {
+			createdResource["subobject"] = map[string]interface{}{"subproperty": "subproperty"}
 			Expect(tx.Create(testSchema, createdResource)).To(Succeed())
 			returnedResource, err := tx.Fetch(testSchema, goext.Filter{"id": createdResource["id"]})
 			Expect(err).To(BeNil())

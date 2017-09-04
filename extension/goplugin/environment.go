@@ -517,7 +517,7 @@ func (thisEnvironment *Environment) resourceFromContext(sch Schema, context map[
 			if err != nil {
 				return nil, err
 			}
-			if fieldType.Type.Kind() == reflect.Struct {
+			if fieldType.Type.Kind() == reflect.Struct || fieldType.Type.Kind() == reflect.Ptr {
 				mapJSON, err := json.Marshal(data[property.ID])
 				if err != nil {
 					return nil, err

@@ -210,6 +210,7 @@ var _ = Describe("Environment", func() {
 			resource := make(map[string]interface{})
 			resource["id"] = "some-id"
 			resource["description"] = "some description"
+			resource["subobject"] = map[string]interface{}{"subproperty": "subvalue"}
 			context = context.WithResource(resource)
 
 			Expect(env.HandleEvent("some_event", context)).To(Succeed())
@@ -217,6 +218,7 @@ var _ = Describe("Environment", func() {
 			Expect(returnedResource).To(Not(BeNil()))
 			Expect(returnedResource.ID).To(Equal("some-id"))
 			Expect(returnedResource.Description).To(Equal("some description"))
+			Expect(returnedResource.Subobject.Subproperty).To(Equal("subvalue"))
 		})
 
 		It("should update resource from context after each event dispatched", func() {
