@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/cloudwan/gohan/db/transaction"
 	"github.com/cloudwan/gohan/extension/goext"
 	"github.com/cloudwan/gohan/schema"
 	"github.com/jmoiron/sqlx/reflectx"
@@ -627,5 +628,13 @@ func contextGetTransaction(ctx goext.Context) (goext.ITransaction, bool) {
 	if ctxTx == nil {
 		return nil, false
 	}
-	return ctxTx.(goext.ITransaction), true
+
+	switch tx := ctxTx.(type) {
+	case goext.ITransaction:
+		return tx, true
+	case transaction.Transaction:
+		return &Transaction{tx}, true
+	default:
+		panic(fmt.Sprintf("Unknown transaction type in context: %+v", ctxTx))
+	}
 }
