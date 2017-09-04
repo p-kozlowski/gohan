@@ -32,6 +32,17 @@ schemas:
         title: Description
         type: string
         unique: false
+      subobject:
+        description: Subobject description
+        permission:
+        - create
+        title: Subobject
+        type: object
+        properties:
+          subproperty:
+            title: Subproperty
+            type: string
+            maxLength: 255
     propertiesOrder:
     - id
     - description
