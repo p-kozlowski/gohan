@@ -219,8 +219,7 @@ func (thisSchema *Schema) List(filter goext.Filter, paginator *goext.Paginator, 
 	if err != nil {
 		return nil, err
 	}
-	xRaw := reflect.ValueOf(fetched)
-	return thisSchema.rawListToResourceList(xRaw), nil
+	return thisSchema.rawListToResourceList(fetched), nil
 }
 
 // LockList locks and returns list of resources.
@@ -230,11 +229,14 @@ func (thisSchema *Schema) LockList(filter goext.Filter, paginator *goext.Paginat
 	if err != nil {
 		return nil, err
 	}
-	xRaw := reflect.ValueOf(fetched)
-	return thisSchema.rawListToResourceList(xRaw), nil
+	return thisSchema.rawListToResourceList(fetched), nil
 }
 
-func (thisSchema *Schema) rawListToResourceList(xRaw reflect.Value) []interface{} {
+func (thisSchema *Schema) rawListToResourceList(rawList []interface{}) []interface{} {
+	if len(rawList) == 0 {
+		return rawList
+	}
+	xRaw := reflect.ValueOf(rawList)
 	resources := reflect.MakeSlice(reflect.SliceOf(GlobTypes[thisSchema.ID()]), xRaw.Len(), xRaw.Len())
 	x := reflect.New(resources.Type())
 	x.Elem().Set(resources)
