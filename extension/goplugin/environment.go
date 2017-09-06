@@ -108,7 +108,7 @@ type Environment struct {
 	schemas      []string
 
 	initFnRaw plugin.Symbol
-	initFns   []func(goext.IEnvironment) error
+	initFn    func(goext.IEnvironment) error
 
 	traceID string
 }
@@ -192,13 +192,10 @@ func (thisEnvironment *Environment) Start() error {
 	// Init
 	log.Debug("Start golang extension: %s", thisEnvironment.source)
 
-	for _, initFn := range thisEnvironment.initFns {
-		err = initFn(thisEnvironment)
-
-		if err != nil {
-			log.Error("Failed to start golang extension: %s; error: %s", thisEnvironment.source, err)
-			return err
-		}
+	err = thisEnvironment.initFn(thisEnvironment)
+	if err != nil {
+		log.Error("Failed to start golang extension: %s; error: %s", thisEnvironment.source, err)
+		return err
 	}
 
 	log.Debug("Golang extension started: %s", thisEnvironment.source)
@@ -233,7 +230,7 @@ func (thisEnvironment *Environment) Load(source string, beforeStartInit func() e
 		thisEnvironment.plugin = existingEnvironment.plugin
 
 		thisEnvironment.initFnRaw = existingEnvironment.initFnRaw
-		thisEnvironment.initFns = existingEnvironment.initFns
+		thisEnvironment.initFn = existingEnvironment.initFn
 
 		return false, nil
 	}
@@ -270,7 +267,7 @@ func (thisEnvironment *Environment) Load(source string, beforeStartInit func() e
 		return false, fmt.Errorf("invalid signature of Init function in golang extension: %s", source)
 	}
 
-	thisEnvironment.initFns = append(thisEnvironment.initFns, initFn)
+	thisEnvironment.initFn = initFn
 
 	return true, nil
 }
@@ -517,7 +514,8 @@ func (thisEnvironment *Environment) resourceFromContext(sch Schema, context map[
 			if err != nil {
 				return nil, err
 			}
-			if fieldType.Type.Kind() == reflect.Struct || fieldType.Type.Kind() == reflect.Ptr {
+			kind := fieldType.Type.Kind()
+			if kind == reflect.Struct || kind == reflect.Ptr || kind == reflect.Slice {
 				mapJSON, err := json.Marshal(data[property.ID])
 				if err != nil {
 					return nil, err
@@ -654,7 +652,7 @@ func (thisEnvironment *Environment) Clone() extension.Environment {
 		schemas:      thisEnvironment.schemas,
 
 		initFnRaw: thisEnvironment.initFnRaw,
-		initFns:   thisEnvironment.initFns,
+		initFn:   thisEnvironment.initFn,
 
 		traceID: uuid.NewV4().String(),
 	}
