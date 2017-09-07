@@ -76,6 +76,14 @@ func (manager *Manager) GetEnvironment(schemaID string) (env Environment, ok boo
 	return
 }
 
+//GetAllEnvironments returns all environmets
+func (manager *Manager) GetAllEnvironments() map[string]Environment {
+	manager.mu.RLock()
+	defer manager.mu.RUnlock()
+
+	return manager.environments
+}
+
 // HandleEventInAllEnvironments handles the event in all registered environments
 func (manager *Manager) HandleEventInAllEnvironments(context map[string]interface{}, event string, schemaID string) error {
 	for name := range manager.environments {

@@ -121,11 +121,6 @@ func (goTestRunner *GoTestRunner) Run() error {
 			return err
 		}
 
-		goTestSuite.env = goplugin.NewEnvironment("test"+pluginFileName, goTestSuite.db, &middleware.FakeIdentity{}, noop.NewSync())
-		manager := extension.GetManager()
-		if err := manager.RegisterEnvironment(pluginFileName, goTestSuite.env); err != nil {
-			return err
-		}
 		goTestSuite.path = filepath.Dir(pluginFileName)
 
 		goTestSuite.manager = schema.GetManager()
@@ -169,7 +164,12 @@ func (goTestRunner *GoTestRunner) Run() error {
 
 		goTestSuite.binaries = goTestSuite.binariesFn()
 
+		manager := extension.GetManager()
 		for _, binary := range goTestSuite.binaries {
+			goTestSuite.env = goplugin.NewEnvironment("test"+binary, goTestSuite.db, &middleware.FakeIdentity{}, noop.NewSync())
+			if err := manager.RegisterEnvironment(binary, goTestSuite.env); err != nil {
+				return err
+			}
 			loaded, err = goTestSuite.env.Load(goTestSuite.path+"/"+binary, func() error {
 				// reset DB
 				err = db.InitDBWithSchemas("sqlite3", dbConnString(testDBFile), true, false, false)
@@ -185,14 +185,14 @@ func (goTestRunner *GoTestRunner) Run() error {
 				log.Error("failed to load golang extension test dependant plugin: %s; error: %s", pluginFileName, err)
 				return err
 			}
-		}
 
-		if loaded {
-			err = goTestSuite.env.Start()
+			if loaded {
+				err = goTestSuite.env.Start()
 
-			if err != nil {
-				log.Error("failed to start extension test dependant plugin: %s; error: %s", pluginFileName, err)
-				return err
+				if err != nil {
+					log.Error("failed to start extension test dependant plugin: %s; error: %s", pluginFileName, err)
+					return err
+				}
 			}
 		}
 

@@ -29,6 +29,7 @@ type IEnvironment interface {
 
 	// state
 	Reset()
+	ResetAllEnvironments()
 }
 
 // IEnvironmentRef indicates that an object holds a reference to a valid environment

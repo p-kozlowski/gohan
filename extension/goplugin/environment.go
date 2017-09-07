@@ -609,12 +609,6 @@ func (thisEnvironment *Environment) ResourceType(name string) reflect.Type {
 func (thisEnvironment *Environment) Stop() {
 	log.Info("Stop environment")
 
-	// reset globals
-	GlobHandlers = nil
-	GlobSchemaHandlers = nil
-	GlobRawTypes = make(map[string]reflect.Type)
-	GlobEnvironments = map[string]*Environment{}
-
 	// reset locals
 	thisEnvironment.extCore = nil
 	thisEnvironment.extLogger = nil
@@ -629,6 +623,20 @@ func (thisEnvironment *Environment) Reset() {
 
 	thisEnvironment.Stop()
 	thisEnvironment.Start()
+}
+
+// ResetAllEnvironments reset all global variables then reset all environments independently
+func (thisEnvironment *Environment) ResetAllEnvironments() {
+	// reset globals
+	GlobHandlers = nil
+	GlobSchemaHandlers = nil
+	GlobRawTypes = make(map[string]reflect.Type)
+	GlobEnvironments = map[string]*Environment{}
+	for _, env := range extension.GetManager().GetAllEnvironments() {
+		if environment, ok := env.(*Environment); ok {
+			environment.Reset()
+		}
+	}
 }
 
 // Clone makes a clone of the rawEnvironment
@@ -652,7 +660,7 @@ func (thisEnvironment *Environment) Clone() extension.Environment {
 		schemas:      thisEnvironment.schemas,
 
 		initFnRaw: thisEnvironment.initFnRaw,
-		initFn:   thisEnvironment.initFn,
+		initFn:    thisEnvironment.initFn,
 
 		traceID: uuid.NewV4().String(),
 	}
