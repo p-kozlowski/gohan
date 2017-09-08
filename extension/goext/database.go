@@ -34,6 +34,7 @@ func withinImpl(context Context, txBegin func() (ITransaction, error), fn func(t
 		if err != nil {
 			return fmt.Errorf("failed to begin transaction: %s", err)
 		}
+		context["transaction"] = tx
 	}
 
 	defer func() {
@@ -43,6 +44,7 @@ func withinImpl(context Context, txBegin func() (ITransaction, error), fn func(t
 			} else if !tx.Closed() {
 				tx.Close()
 			}
+			delete(context, "transaction")
 		}
 	}()
 
