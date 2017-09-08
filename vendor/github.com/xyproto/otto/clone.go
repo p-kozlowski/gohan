@@ -2,7 +2,12 @@ package otto
 
 import (
 	"fmt"
+	"time"
+
+	l "github.com/cloudwan/gohan/log"
 )
+
+var log = l.NewLogger()
 
 type _clone struct {
 	runtime      *_runtime
@@ -16,6 +21,9 @@ func (in *_runtime) clone() *_runtime {
 
 	in.lck.Lock()
 	defer in.lck.Unlock()
+
+	now := time.Now()
+	log.Error("XXXXXXXXXX inner clone: %d", now.UnixNano())
 
 	out := &_runtime{
 		debugger:   in.debugger,
@@ -80,6 +88,8 @@ func (in *_runtime) clone() *_runtime {
 	clone._objectStash = nil
 	clone._dclStash = nil
 	clone._fnStash = nil
+
+	log.Error("XXXXXXXXXX inner clone took: %d", time.Since(now).Nanoseconds())
 
 	return out
 }

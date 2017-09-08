@@ -319,8 +319,15 @@ func (env *Environment) SetEventTimeLimit(eventRegex string, timeLimit time.Dura
 
 //Clone makes clone of the environment
 func (env *Environment) Clone() ext.Environment {
+	now := time.Now()
+	log.Error("YYYYYYYYYYYYYYY outer clone: %d", now.UnixNano())
+
 	clone := NewEnvironment(env.Name, env.DataStore, env.Identity, env.Sync)
+
+	lockStart := time.Now()
 	clone.VM.Otto = env.VM.Copy()
+	log.Error("ZZZZZZZZZZ clone+lock took: %d", time.Since(lockStart).Nanoseconds())
+
 	clone.VM.Otto.Interrupt = make(chan func(), 1)
 	clone.timeLimit = env.timeLimit
 	clone.timeLimits = env.timeLimits
@@ -331,6 +338,9 @@ func (env *Environment) Clone() ext.Environment {
 	for _, hook := range env.loadHooks {
 		clone.loadHooks = append(clone.loadHooks, hook)
 	}
+
+	log.Error("XXXXXXXXXX inner clone took: %d", time.Since(now).Nanoseconds())
+
 	return clone
 }
 
