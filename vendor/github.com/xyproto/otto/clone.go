@@ -19,11 +19,12 @@ type _clone struct {
 
 func (in *_runtime) clone() *_runtime {
 
+	lockStart := time.Now()
 	in.lck.Lock()
 	defer in.lck.Unlock()
+	log.Error("XXXXXXXXXX waiting for lock: %d", time.Since(lockStart).Nanoseconds())
 
 	now := time.Now()
-	log.Error("XXXXXXXXXX inner clone: %d", now.UnixNano())
 
 	out := &_runtime{
 		debugger:   in.debugger,
@@ -89,7 +90,7 @@ func (in *_runtime) clone() *_runtime {
 	clone._dclStash = nil
 	clone._fnStash = nil
 
-	log.Error("XXXXXXXXXX inner clone took: %d", time.Since(now).Nanoseconds())
+	log.Error("YYYYYYYYYYYYYYY pure clone: %d", time.Since(now).Nanoseconds())
 
 	return out
 }
