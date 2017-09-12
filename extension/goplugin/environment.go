@@ -304,16 +304,16 @@ func (thisEnvironment *Environment) dispatchSchemaEvent(prioritizedSchemaHandler
 	defer thisEnvironment.Logger().Debugf("Finished event: %s, schema: %s", event, sch.rawSchema.ID)
 	if resource, err := thisEnvironment.resourceFromContext(sch, context); err == nil {
 		for _, priority := range sortSchemaHandlers(prioritizedSchemaHandlers) {
-			for index, schemaEventHandler := range prioritizedSchemaHandlers[priority] {
+			for _, schemaEventHandler := range prioritizedSchemaHandlers[priority] {
+				context["go_validation"] = true
 				if err := schemaEventHandler(context, resource, thisEnvironment); err != nil {
-					return fmt.Errorf("failed to dispatch schema event '%s' to schema '%s' at priority '%d' with index '%d': %s",
-						event, sch.ID(), priority, index, err)
+					return err
 				}
-				thisEnvironment.updateContextFromResource(context, resource)
+				context["resource"] = sch.StructToMap(resource)
 			}
 		}
 	} else {
-		return fmt.Errorf("failed to parse resource from context with schema '%s' for event '%s': %s", sch.ID(), event, err)
+		return goext.Error{goext.ErrorBadRequest, fmt.Errorf("failed to parse resource from context with schema '%s' for event '%s': %s", sch.ID(), event, err)}
 	}
 
 	return nil
@@ -473,6 +473,48 @@ func (thisEnvironment *Environment) resourceToMap(resource interface{}) interfac
 	resourceElemType := resourceElem.Type()
 
 	if resourceElemType.Kind() == reflect.Struct {
+		switch res := resource.(type) {
+		case *goext.NullString:
+			if res.Valid {
+				return res.Value
+			}
+			return nil
+		case *goext.NullInt:
+			if res.Valid {
+				return res.Value
+			}
+			return nil
+		case *goext.NullFloat:
+			if res.Valid {
+				return res.Value
+			}
+			return nil
+		case *goext.NullBool:
+			if res.Valid {
+				return res.Value
+			}
+			return nil
+		case goext.NullString:
+			if res.Valid {
+				return res.Value
+			}
+			return nil
+		case goext.NullInt:
+			if res.Valid {
+				return res.Value
+			}
+			return nil
+		case goext.NullFloat:
+			if res.Valid {
+				return res.Value
+			}
+			return nil
+		case goext.NullBool:
+			if res.Valid {
+				return res.Value
+			}
+			return nil
+		}
 		data := make(map[string]interface{})
 
 		for i := 0; i < resourceElemType.NumField(); i++ {

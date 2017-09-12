@@ -90,7 +90,7 @@ func (thisSchema *Schema) ID() string {
 	return thisSchema.rawSchema.ID
 }
 
-func (thisSchema *Schema) structToMap(resource interface{}) map[string]interface{} {
+func (thisSchema *Schema) StructToMap(resource interface{}) map[string]interface{} {
 	fieldsMap := map[string]interface{}{}
 
 	mapper := reflectx.NewMapper("db")
@@ -134,7 +134,7 @@ func (thisSchema *Schema) structToMap(resource interface{}) map[string]interface
 }
 
 func (thisSchema *Schema) structToResource(resource interface{}) (*schema.Resource, error) {
-	fieldsMap := thisSchema.structToMap(resource)
+	fieldsMap := thisSchema.StructToMap(resource)
 	return schema.NewResource(thisSchema.rawSchema, fieldsMap)
 }
 
@@ -348,13 +348,13 @@ func (thisSchema *Schema) CreateRaw(rawResource interface{}, context goext.Conte
 	if hasOpenTransaction {
 		contextCopy := goext.MakeContext().
 			WithSchemaID(thisSchema.ID()).
-			WithResource(thisSchema.structToMap(rawResource))
+			WithResource(thisSchema.StructToMap(rawResource))
 		contextSetTransaction(contextCopy, tx)
 		return thisSchema.createInTransaction(rawResource, contextCopy, tx)
 	}
 
 	context.WithSchemaID(thisSchema.ID()).
-		WithResource(thisSchema.structToMap(rawResource))
+		WithResource(thisSchema.StructToMap(rawResource))
 
 	if err := thisSchema.environment.HandleEvent(goext.PreCreate, context); err != nil {
 		return err
@@ -441,7 +441,7 @@ func (thisSchema *Schema) UpdateRaw(rawResource interface{}, context goext.Conte
 	for k, v := range context {
 		contextCopy[k] = v
 	}
-	contextCopy.WithResource(thisSchema.structToMap(rawResource)).
+	contextCopy.WithResource(thisSchema.StructToMap(rawResource)).
 		WithResourceID(resourceData.ID()).
 		WithSchemaID(thisSchema.ID())
 
@@ -499,7 +499,7 @@ func (thisSchema *Schema) DbUpdateRaw(rawResource interface{}, context goext.Con
 		context = goext.MakeContext()
 	}
 
-	context.WithResource(thisSchema.structToMap(rawResource)).
+	context.WithResource(thisSchema.StructToMap(rawResource)).
 		WithResourceID(resourceData.ID()).
 		WithSchemaID(thisSchema.ID())
 
@@ -564,7 +564,7 @@ func (thisSchema *Schema) DeleteRaw(filter goext.Filter, context goext.Context) 
 		resource := reflect.ValueOf(fetched[i])
 		resourceID := mapper.FieldByName(resource, "id").Interface()
 
-		contextTx = contextTx.WithResource(thisSchema.structToMap(resource.Interface())).
+		contextTx = contextTx.WithResource(thisSchema.StructToMap(resource.Interface())).
 			WithSchemaID(thisSchema.ID())
 
 		if err = thisSchema.environment.HandleEvent(goext.PreDelete, contextTx); err != nil {
