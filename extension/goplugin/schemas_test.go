@@ -18,6 +18,9 @@ package goplugin_test
 import (
 	"os"
 
+	"sync"
+	"time"
+
 	"github.com/cloudwan/gohan/db"
 	"github.com/cloudwan/gohan/db/options"
 	"github.com/cloudwan/gohan/extension/goext"
@@ -30,33 +33,42 @@ import (
 
 var _ = Describe("Transaction", func() {
 	var (
-		env *goplugin.Environment
+		env    *goplugin.Environment
+		dbFile string
+		dbType string
 	)
 
 	const (
-		DbFile     = "test.db"
-		DbType     = "sqlite3"
 		SchemaPath = "test_data/test_schema.yaml"
 	)
 
 	BeforeEach(func() {
+		if os.Getenv("MYSQL_TEST") == "true" {
+			dbFile = "root@/gohan_test"
+			dbType = "mysql"
+		} else {
+			dbFile = "test.db"
+			dbType = "sqlite3"
+		}
+
 		manager := schema.GetManager()
 		Expect(manager.LoadSchemaFromFile(SchemaPath)).To(Succeed())
-		db, err := db.ConnectDB(DbType, DbFile, db.DefaultMaxOpenConn, options.Default())
+		db, err := db.ConnectDB(dbType, dbFile, db.DefaultMaxOpenConn, options.Default())
 		Expect(err).To(BeNil())
 		env = goplugin.NewEnvironment("test", db, nil, nil)
 	})
 
 	AfterEach(func() {
-		os.Remove(DbFile)
+		os.Remove(dbFile)
 
 	})
 
-	Describe("CRUD", func() {
+	Context("CRUD", func() {
 		var (
 			testSchema      goext.ISchema
 			createdResource test.Test
 			context         goext.Context
+			tx              goext.ITransaction
 		)
 
 		BeforeEach(func() {
@@ -67,10 +79,10 @@ var _ = Describe("Transaction", func() {
 			testSchema = env.Schemas().Find("test")
 			Expect(testSchema).To(Not(BeNil()))
 
-			err = db.InitDBWithSchemas(DbType, DbFile, true, true, false)
+			err = db.InitDBWithSchemas(dbType, dbFile, true, true, false)
 			Expect(err).To(BeNil())
 
-			tx, err := env.Database().Begin()
+			tx, err = env.Database().Begin()
 			Expect(err).To(BeNil())
 
 			context = goext.MakeContext().WithTransaction(tx)
@@ -82,6 +94,7 @@ var _ = Describe("Transaction", func() {
 		})
 
 		AfterEach(func() {
+			tx.Close()
 			env.Stop()
 		})
 
@@ -121,5 +134,115 @@ var _ = Describe("Transaction", func() {
 			returnedTest := returnedResource.(*test.Test)
 			Expect(returnedTest.Description).To(Equal("other-description"))
 		})
+
 	})
+
+	Context("Locks", func() {
+		var (
+			testSchema      goext.ISchema
+			createdResource test.Test
+		)
+
+		BeforeEach(func() {
+			if os.Getenv("MYSQL_TEST") != "true" {
+				Skip("Locks are only valid in MySQL")
+			}
+
+			loaded, err := env.Load("test_data/ext_good/ext_good.so", nil)
+			Expect(loaded).To(BeTrue())
+			Expect(err).To(BeNil())
+			Expect(env.Start()).To(Succeed())
+			testSchema = env.Schemas().Find("test")
+			Expect(testSchema).To(Not(BeNil()))
+
+			err = db.InitDBWithSchemas(dbType, dbFile, true, true, false)
+			Expect(err).To(BeNil())
+
+			createdResource = test.Test{
+				ID:          "some-id",
+				Description: "description",
+			}
+		})
+
+		It("Locks single resource", func() {
+			Expect(testSchema.CreateRaw(&createdResource, nil)).To(Succeed())
+
+			firstTx, err := env.Database().Begin()
+			Expect(err).To(BeNil())
+			defer firstTx.Close()
+
+			context := goext.MakeContext().WithTransaction(firstTx)
+			_, err = testSchema.LockFetchRaw(createdResource.ID, context, goext.SkipRelatedResources)
+			Expect(err).To(Succeed())
+
+			commited := make(chan bool, 1)
+
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+
+			go func() {
+				defer GinkgoRecover()
+
+				secondTx, err := env.Database().Begin()
+				Expect(err).To(Succeed())
+				defer secondTx.Close()
+
+				context := goext.MakeContext().WithTransaction(secondTx)
+				wg.Done()
+				_, err = testSchema.LockFetchRaw(createdResource.ID, context, goext.SkipRelatedResources)
+				Expect(err).To(Succeed())
+				Expect(commited).Should(Receive())
+			}()
+
+			wg.Wait()
+			// we're just before the call to LockListRaw in the child goroutine, let's make the call happen
+			time.Sleep(time.Millisecond * 10)
+			// once we commit, the lock will be released. mark we're done
+			commited <- true
+			firstTx.Commit()
+			// now the child goroutine should wake up and verify it executed after us
+			// this test is not perfect, but this implementation may yield false positives, but not false negatives
+		})
+
+		It("Locks many resources", func() {
+			Expect(testSchema.CreateRaw(&createdResource, nil)).To(Succeed())
+
+			firstTx, err := env.Database().Begin()
+			Expect(err).To(BeNil())
+			defer firstTx.Close()
+
+			context := goext.MakeContext().WithTransaction(firstTx)
+			_, err = testSchema.LockListRaw(map[string]interface{}{"id": createdResource.ID}, nil, context, goext.SkipRelatedResources)
+			Expect(err).To(Succeed())
+
+			commited := make(chan bool, 1)
+
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+
+			go func() {
+				defer GinkgoRecover()
+
+				secondTx, err := env.Database().Begin()
+				Expect(err).To(Succeed())
+				defer secondTx.Close()
+
+				context := goext.MakeContext().WithTransaction(secondTx)
+				wg.Done()
+				_, err = testSchema.LockListRaw(map[string]interface{}{"id": createdResource.ID}, nil, context, goext.SkipRelatedResources)
+				Expect(err).To(Succeed())
+				Expect(commited).Should(Receive())
+			}()
+
+			wg.Wait()
+			// we're just before the call to LockListRaw in the child goroutine, let's make the call happen
+			time.Sleep(time.Millisecond * 10)
+			// once we commit, the lock will be released. mark we're done
+			commited <- true
+			firstTx.Commit()
+			// now the child goroutine should wake up and verify it executed after us
+			// this test is not perfect, but this implementation may yield false positives, but not false negatives
+		})
+	})
+
 })

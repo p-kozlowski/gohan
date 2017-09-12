@@ -160,6 +160,14 @@ func (thisSchema *Schema) assignField(name string, field reflect.Value, value in
 
 // ListRaw lists schema raw resources
 func (thisSchema *Schema) ListRaw(filter goext.Filter, paginator *goext.Paginator, context goext.Context) ([]interface{}, error) {
+	return thisSchema.listImpl(context, func(tx goext.ITransaction) ([]map[string]interface{}, uint64, error) {
+		return tx.List(thisSchema, filter, nil, paginator)
+	})
+}
+
+type listFunc func(tx goext.ITransaction) ([]map[string]interface{}, uint64, error)
+
+func (thisSchema *Schema) listImpl(context goext.Context, list listFunc) ([]interface{}, error) {
 	resourceType, ok := GlobRawTypes[thisSchema.ID()]
 	if !ok {
 		return nil, ErrMissingType
@@ -181,7 +189,7 @@ func (thisSchema *Schema) ListRaw(filter goext.Filter, paginator *goext.Paginato
 		defer tx.Close()
 	}
 
-	data, _, err := tx.List(thisSchema, filter, nil, paginator)
+	data, _, err := list(tx)
 
 	if err != nil {
 		return nil, err
@@ -208,8 +216,9 @@ func (thisSchema *Schema) ListRaw(filter goext.Filter, paginator *goext.Paginato
 
 // LockListRaw locks and returns raw resources
 func (thisSchema *Schema) LockListRaw(filter goext.Filter, paginator *goext.Paginator, context goext.Context, policy goext.LockPolicy) ([]interface{}, error) {
-	//TODO: implement proper locking
-	return thisSchema.ListRaw(filter, paginator, context)
+	return thisSchema.listImpl(context, func(tx goext.ITransaction) ([]map[string]interface{}, uint64, error) {
+		return tx.LockList(thisSchema, filter, nil, paginator, policy)
+	})
 }
 
 // List returns list of resources.
@@ -262,6 +271,21 @@ func (thisSchema *Schema) rawToResource(xRaw reflect.Value) interface{} {
 
 // FetchRaw fetches a raw resource by ID
 func (thisSchema *Schema) FetchRaw(id string, context goext.Context) (interface{}, error) {
+	return thisSchema.fetchImpl(id, context, func(tx goext.ITransaction, filter goext.Filter) (map[string]interface{}, error) {
+		return tx.Fetch(thisSchema, filter)
+	})
+}
+
+// LockFetchRaw locks and fetches resource by ID
+func (thisSchema *Schema) LockFetchRaw(id string, context goext.Context, policy goext.LockPolicy) (interface{}, error) {
+	return thisSchema.fetchImpl(id, context, func(tx goext.ITransaction, filter goext.Filter) (map[string]interface{}, error) {
+		return tx.LockFetch(thisSchema, filter, policy)
+	})
+}
+
+type fetchFunc func(tx goext.ITransaction, filter goext.Filter) (map[string]interface{}, error)
+
+func (thisSchema *Schema) fetchImpl(id string, context goext.Context, fetch fetchFunc) (interface{}, error) {
 	if context == nil {
 		context = goext.MakeContext()
 	}
@@ -281,7 +305,7 @@ func (thisSchema *Schema) FetchRaw(id string, context goext.Context) (interface{
 
 	filter := goext.Filter{"id": id}
 
-	data, err := tx.Fetch(thisSchema, filter)
+	data, err := fetch(tx, filter)
 
 	if err != nil {
 		return nil, err
@@ -328,11 +352,6 @@ func setValue(field, value reflect.Value) {
 			field.Set(value)
 		}
 	}
-}
-
-// LockFetchRaw locks and fetches resource by ID
-func (thisSchema *Schema) LockFetchRaw(id string, context goext.Context, policy goext.LockPolicy) (interface{}, error) {
-	return thisSchema.FetchRaw(id, context)
 }
 
 // CreateRaw creates a resource
