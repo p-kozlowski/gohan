@@ -23,34 +23,44 @@ type IDatabase interface {
 	BeginTx(ctx Context, options *TxOptions) (ITransaction, error)
 }
 
-func withinImpl(txBegin func() (ITransaction, error), fn func(tx ITransaction) error) error {
-	tx, err := txBegin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %s", err)
+func withinImpl(context Context, txBegin func() (ITransaction, error), fn func(tx ITransaction) error) (err error) {
+	rawTx, hasOwner := context["transaction"]
+	var tx ITransaction
+
+	if hasOwner {
+		tx = rawTx.(ITransaction)
+	} else {
+		tx, err = txBegin()
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction: %s", err)
+		}
+		context["transaction"] = tx
 	}
+
 	defer func() {
-		if !tx.Closed() {
-			tx.Close()
+		if !hasOwner {
+			if err == nil {
+				err = tx.Commit()
+			} else if !tx.Closed() {
+				tx.Close()
+			}
+			delete(context, "transaction")
 		}
 	}()
 
-	if err := fn(tx); err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	return fn(tx)
 }
 
 // Within calls a function in scoped transaction
-func Within(env IEnvironment, fn func(tx ITransaction) error) error {
-	return withinImpl(func() (ITransaction, error) {
+func Within(env IEnvironment, context Context, fn func(tx ITransaction) error) error {
+	return withinImpl(context, func() (ITransaction, error) {
 		return env.Database().Begin()
 	}, fn)
 }
 
 // WithinTx calls a function in scoped transaction with options
 func WithinTx(env IEnvironment, ctx Context, options *TxOptions, fn func(tx ITransaction) error) error {
-	return withinImpl(func() (ITransaction, error) {
+	return withinImpl(ctx, func() (ITransaction, error) {
 		return env.Database().BeginTx(ctx, options)
 	}, fn)
 }

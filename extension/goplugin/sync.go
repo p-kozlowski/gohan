@@ -17,11 +17,11 @@ package goplugin
 
 import (
 	"github.com/cloudwan/gohan/extension/goext"
-	"github.com/cloudwan/gohan/sync"
+	gohan_sync "github.com/cloudwan/gohan/sync"
 	"time"
 )
 
-func convertEvent(event *sync.Event) *goext.Event {
+func convertEvent(event *gohan_sync.Event) *goext.Event {
 	if event == nil {
 		return nil
 	}
@@ -34,7 +34,7 @@ func convertEvent(event *sync.Event) *goext.Event {
 	}
 }
 
-func convertNode(node *sync.Node) *goext.Node {
+func convertNode(node *gohan_sync.Node) *goext.Node {
 	if node == nil {
 		return nil
 	}
@@ -47,7 +47,7 @@ func convertNode(node *sync.Node) *goext.Node {
 	}
 }
 
-func convertNodes(nodes []*sync.Node) []*goext.Node {
+func convertNodes(nodes []*gohan_sync.Node) []*goext.Node {
 	result := []*goext.Node{}
 
 	for _, node := range nodes {
@@ -63,8 +63,8 @@ type Sync struct {
 }
 
 // Fetch fetches a path from sync
-func (thisSync *Sync) Fetch(path string) (*goext.Node, error) {
-	node, err := thisSync.environment.sync.Fetch(path)
+func (sync *Sync) Fetch(path string) (*goext.Node, error) {
+	node, err := sync.environment.sync.Fetch(path)
 
 	if err != nil {
 		return nil, err
@@ -74,19 +74,19 @@ func (thisSync *Sync) Fetch(path string) (*goext.Node, error) {
 }
 
 // Delete deletes a path from sync
-func (thisSync *Sync) Delete(path string, prefix bool) error {
-	return thisSync.environment.sync.Delete(path, prefix)
+func (sync *Sync) Delete(path string, prefix bool) error {
+	return sync.environment.sync.Delete(path, prefix)
 }
 
 // Watch watches a single path in sync
-func (thisSync *Sync) Watch(path string, timeout time.Duration, revision int64) ([]*goext.Event, error) {
-	eventChan := make(chan *sync.Event, 32)
+func (sync *Sync) Watch(path string, timeout time.Duration, revision int64) ([]*goext.Event, error) {
+	eventChan := make(chan *gohan_sync.Event, 32)
 	stopChan := make(chan bool, 1)
 	defer close(stopChan)
 	errorChan := make(chan error, 1)
 
 	go func() {
-		if err := thisSync.environment.sync.Watch(path, eventChan, stopChan, revision); err != nil {
+		if err := sync.environment.sync.Watch(path, eventChan, stopChan, revision); err != nil {
 			errorChan <- err
 		}
 	}()
@@ -103,8 +103,8 @@ func (thisSync *Sync) Watch(path string, timeout time.Duration, revision int64) 
 }
 
 // Environment returns the parent environment
-func (thisSync *Sync) Environment() goext.IEnvironment {
-	return thisSync.environment
+func (sync *Sync) Environment() goext.IEnvironment {
+	return sync.environment
 }
 
 // NewSync allocates Sync

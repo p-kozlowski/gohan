@@ -3,19 +3,20 @@ package goplugin
 import (
 	"context"
 
-	"github.com/cloudwan/gohan/db"
+	gohan_db "github.com/cloudwan/gohan/db"
 	"github.com/cloudwan/gohan/db/transaction"
 	"github.com/cloudwan/gohan/extension/goext"
 )
 
 // Database in an implementation of IDatabase
 type Database struct {
-	db db.DB
+	env *Environment
+	db  gohan_db.DB
 }
 
 // NewDatabase creates new database implementation
-func NewDatabase(environment *Environment) goext.IDatabase {
-	return &Database{db: environment.db}
+func NewDatabase(env *Environment) goext.IDatabase {
+	return &Database{env: env, db: env.db}
 }
 
 // Begin starts a new transaction

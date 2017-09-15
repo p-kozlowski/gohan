@@ -121,6 +121,9 @@ type ISchema interface {
 	// ListRaw returns a pointer to raw resource, containing db annotations
 	FetchRaw(id string, context Context) (interface{}, error)
 
+	// LockFetch returns a pointer to locked resource derived from BaseResource, containing db annotations
+	LockFetch(id string, context Context, lockPolicy LockPolicy) (interface{}, error)
+
 	// LockFetchRaw returns a pointer to locked raw resource, containing db annotations
 	LockFetchRaw(id string, context Context, lockPolicy LockPolicy) (interface{}, error)
 

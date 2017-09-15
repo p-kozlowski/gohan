@@ -1,6 +1,8 @@
 package goplugin
 
 import (
+	"fmt"
+
 	"github.com/cloudwan/gohan/db/pagination"
 	"github.com/cloudwan/gohan/db/transaction"
 	"github.com/cloudwan/gohan/extension/goext"
@@ -89,8 +91,24 @@ func (t *Transaction) Fetch(schema goext.ISchema, filter goext.Filter) (map[stri
 
 // LockFetch locks and fetches an existing resource
 func (t *Transaction) LockFetch(schema goext.ISchema, filter goext.Filter, lockPolicy goext.LockPolicy) (map[string]interface{}, error) {
-	//TODO: implement proper locking
-	return t.Fetch(schema, filter)
+	res, err := t.tx.LockFetch(t.findRawSchema(schema.ID()), transaction.Filter(filter), convertLockPolicy(lockPolicy), nil)
+	if err != nil {
+		return nil, err
+	}
+	return res.Data(), nil
+}
+
+func convertLockPolicy(policy goext.LockPolicy) schema.LockPolicy {
+	switch policy {
+	case goext.SkipRelatedResources:
+		return schema.SkipRelatedResources
+	case goext.LockRelatedResources:
+		return schema.LockRelatedResources
+	case goext.NoLock:
+		return schema.NoLocking
+	default:
+		panic(fmt.Sprintf("Unknown lock policy: %d", policy))
+	}
 }
 
 // StateFetch fetches a state an existing resource
@@ -111,6 +129,10 @@ func (t *Transaction) List(schema goext.ISchema, filter goext.Filter, listOption
 		return nil, 0, err
 	}
 
+	return resourcesToMap(data)
+}
+
+func resourcesToMap(data []*schema.Resource) ([]map[string]interface{}, uint64, error) {
 	resourceProperties := make([]map[string]interface{}, len(data))
 	for i := range data {
 		resourceProperties[i] = data[i].Data()
@@ -121,7 +143,14 @@ func (t *Transaction) List(schema goext.ISchema, filter goext.Filter, listOption
 
 // LockList locks and lists existing resources
 func (t *Transaction) LockList(schema goext.ISchema, filter goext.Filter, listOptions *goext.ListOptions, paginator *goext.Paginator, lockingPolicy goext.LockPolicy) ([]map[string]interface{}, uint64, error) {
-	return t.List(schema, filter, listOptions, paginator)
+	schemaID := schema.ID()
+
+	data, _, err := t.tx.LockList(t.findRawSchema(schemaID), transaction.Filter(filter), nil, (*pagination.Paginator)(paginator), convertLockPolicy(lockingPolicy))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return resourcesToMap(data)
 }
 
 // RawTransaction returns the raw transaction

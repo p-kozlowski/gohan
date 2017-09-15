@@ -13,15 +13,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package test
+package goext
 
-type TestSubobject struct {
-	Subproperty string `json:"subproperty,omitempty"`
+type Header map[string][]string
+
+type Response struct {
+	Code   int
+	Status string
+	Header Header
+	Body   string
 }
 
-// Test is a test resource
-type Test struct {
-	ID          string         `db:"id"`
-	Description string         `db:"description"`
-	Subobject   *TestSubobject `db:"subobject"`
+// IHttp is an interface to http in Gohan
+type IHttp interface {
+	Request(method, rawURL string, headers map[string]interface{}, postData interface{}, opaque bool, timeout int) (*Response, error)
+	RequestRaw(method, rawURL string, headers map[string]string, rawData string) (*Response, error)
 }
