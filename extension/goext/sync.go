@@ -15,7 +15,10 @@
 
 package goext
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 // Event is an event from Sync
 type Event struct {
@@ -39,5 +42,5 @@ type ISync interface {
 
 	Fetch(path string) (*Node, error)
 	Delete(path string, prefix bool) error
-	Watch(path string, timeout time.Duration, revision int64) ([]*Event, error)
+	Watch(ctx context.Context, path string, timeout time.Duration, revision int64) ([]*Event, error)
 }

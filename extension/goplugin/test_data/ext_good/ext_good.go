@@ -18,6 +18,10 @@ package main
 import (
 	"fmt"
 
+	"context"
+
+	"time"
+
 	"github.com/cloudwan/gohan/extension/goext"
 	"github.com/cloudwan/gohan/extension/goplugin/test_data/ext_good/test"
 )
@@ -36,5 +40,19 @@ func Init(env goext.IEnvironment) error {
 		return fmt.Errorf("test schema not found")
 	}
 	testSchema.RegisterRawType(test.Test{})
+	testSchema.RegisterEventHandler("wait_for_context_cancel", HandleWaitForContextCancel, goext.PriorityDefault)
 	return nil
+}
+
+func HandleWaitForContextCancel(requestContext goext.Context, _ goext.Resource, _ goext.IEnvironment) error {
+	ctx := requestContext["context"].(context.Context)
+
+	select {
+	case <-ctx.Done():
+		return nil
+	case <-time.After(time.Minute):
+		return fmt.Errorf("context should be canceled")
+	}
+
+	panic("test extension: something went terribly wrong")
 }
