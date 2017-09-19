@@ -232,43 +232,43 @@ func (env *Environment) Start() error {
 }
 
 // Load loads script into the environment
-func (env *Environment) Load(fileName string) (bool, error) {
+func (env *Environment) Load(fileName string) error {
 	log.Debug("Loading go extension: %s", fileName)
 
 	if _, ok := env.initFns[fileName]; ok {
 		log.Warning("Go extension %s already loaded in %s", fileName, env.name)
-		return true, nil
+		return nil
 	}
 
 	var err error
 	var ok bool
 
 	if filepath.Ext(fileName) != ".so" {
-		return false, fmt.Errorf("go extension must be a *.so file, file: %s", fileName)
+		return fmt.Errorf("go extension must be a *.so file, file: %s", fileName)
 	}
 
 	pl, err := plugin.Open(fileName)
 
 	if err != nil {
-		return false, fmt.Errorf("failed to load go extension: %s", err)
+		return fmt.Errorf("failed to load go extension: %s", err)
 	}
 
 	// Init
 	initFnRaw, err := pl.Lookup("Init")
 
 	if err != nil {
-		return false, fmt.Errorf("go extension does not export Init: %s", err)
+		return fmt.Errorf("go extension does not export Init: %s", err)
 	}
 
 	initFn, ok := initFnRaw.(func(goext.IEnvironment) error)
 
 	if !ok {
-		return false, fmt.Errorf("invalid signature of Init function in go extension: %s", fileName)
+		return fmt.Errorf("invalid signature of Init function in go extension: %s", fileName)
 	}
 
 	env.initFns[fileName] = initFn
 
-	return true, nil
+	return nil
 }
 
 //LoadExtensionsForPath for returns extensions for specific path
@@ -283,18 +283,11 @@ func (env *Environment) LoadExtensionsForPath(extensions []*schema.Extension, ti
 				log.Warning("ignore go extension '%s' without plugin", extension.ID)
 				continue
 			}
-			loaded, err := env.Load(url)
-			if err != nil {
-				return err
-			}
-			if loaded {
-				if err = env.Start(); err != nil {
-					return err
-				}
+			if err := env.Load(url); err != nil {
+				return fmt.Errorf("failed to load binary: %s", err)
 			}
 		}
 	}
-
 	return nil
 }
 

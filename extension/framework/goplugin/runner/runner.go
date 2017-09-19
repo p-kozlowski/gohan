@@ -44,19 +44,19 @@ var log = gohan_logger.NewLogger()
 
 // TestRunner is a test runner for go extensions
 type TestRunner struct {
-	pluginFileNames []string
-	verboseLogs     bool
-	fileNameFilter  *regexp.Regexp
-	workerCount     int
+	fileNames      []string
+	verboseLogs    bool
+	fileNameFilter *regexp.Regexp
+	workerCount    int
 }
 
 // NewTestRunner allocates a new TestRunner
-func NewTestRunner(pluginFileNames []string, printAllLogs bool, testFilter string, workers int) *TestRunner {
+func NewTestRunner(fileNames []string, printAllLogs bool, testFilter string, workers int) *TestRunner {
 	return &TestRunner{
-		pluginFileNames: pluginFileNames,
-		verboseLogs:     printAllLogs,
-		fileNameFilter:  regexp.MustCompile(testFilter),
-		workerCount:     workers,
+		fileNames:      fileNames,
+		verboseLogs:    printAllLogs,
+		fileNameFilter: regexp.MustCompile(testFilter),
+		workerCount:    workers,
 	}
 }
 
@@ -69,17 +69,15 @@ func (testRunner *TestRunner) Run() error {
 
 	// run suites
 	var err error
-
-	for _, pluginFileName := range testRunner.pluginFileNames {
-		if !testRunner.fileNameFilter.MatchString(pluginFileName) {
+	for _, fileName := range testRunner.fileNames {
+		if !testRunner.fileNameFilter.MatchString(fileName) {
 			continue
 		}
-
-		if err = testRunner.runSingle(t, reporter, pluginFileName); err != nil {
+		if err = testRunner.runSingle(t, reporter, fileName); err != nil {
 			break
 		}
 	}
-
+	// display report
 	reporter.Report()
 	return err
 }
@@ -101,10 +99,10 @@ func readSchemas(p *plugin.Plugin) ([]string, error) {
 }
 
 func readBinaries(p *plugin.Plugin) ([]string, error) {
-	fnRaw, err := p.Lookup("Binaries")
+	fnRaw, err := p.Lookup("Binaries") // optional
 
 	if err != nil {
-		return nil, fmt.Errorf("missing 'Binaries' export: %s", err)
+		return []string{}, nil
 	}
 
 	fn, ok := fnRaw.(func() []string)
@@ -132,14 +130,14 @@ func readTest(p *plugin.Plugin) (func(goext.IEnvironment), error) {
 	return testFn, nil
 }
 
-func (testRunner *TestRunner) runSingle(t ginkgo.GinkgoTestingT, reporter *Reporter, pluginFileName string) error {
-	log.Notice("Running Go extensions test: %s", pluginFileName)
+func (testRunner *TestRunner) runSingle(t ginkgo.GinkgoTestingT, reporter *Reporter, fileName string) error {
+	log.Notice("Running Go extensions test: %s", fileName)
 
 	// inform reporter about test suite
-	reporter.Prepare(pluginFileName)
+	reporter.Prepare(fileName)
 
 	// load plugin
-	p, err := plugin.Open(pluginFileName)
+	p, err := plugin.Open(fileName)
 
 	if err != nil {
 		return fmt.Errorf("failed to open plugin: %s", err)
@@ -149,11 +147,11 @@ func (testRunner *TestRunner) runSingle(t ginkgo.GinkgoTestingT, reporter *Repor
 	schemas, err := readSchemas(p)
 
 	if err != nil {
-		return fmt.Errorf("failed to read schemas from '%s': %s", pluginFileName, err)
+		return fmt.Errorf("failed to read schemas from: %s", err)
 	}
 
 	// get state
-	path := filepath.Dir(pluginFileName)
+	path := filepath.Dir(fileName)
 	manager := schema.GetManager()
 
 	// load schemas
@@ -167,7 +165,7 @@ func (testRunner *TestRunner) runSingle(t ginkgo.GinkgoTestingT, reporter *Repor
 	binaries, err := readBinaries(p)
 
 	if err != nil {
-		return fmt.Errorf("failed to read binaries from '%s': %s", pluginFileName, err)
+		return fmt.Errorf("failed to read binaries: %s", err)
 	}
 
 	// create env
@@ -208,20 +206,21 @@ func (testRunner *TestRunner) runSingle(t ginkgo.GinkgoTestingT, reporter *Repor
 		return fmt.Errorf("failed to register environment: %s", err)
 	}
 
+	// load extensions
+	if err := env.LoadExtensionsForPath(manager.Extensions, manager.TimeLimit, manager.TimeLimits, ""); err != nil {
+		return fmt.Errorf("failed to load schemas extensions: %s", err)
+	}
+
 	// load binaries
 	for _, binary := range binaries {
-		_, err := env.Load(path + "/" + binary)
-
-		if err != nil {
-			return fmt.Errorf("failed to load test binary: %s", err)
+		if err := env.Load(path + "/" + binary); err != nil {
+			return fmt.Errorf("failed to load binary: %s", err)
 		}
 	}
 
 	// start env
-	err = env.Start()
-
-	if err != nil {
-		log.Error("failed to start extension test dependant plugin: %s; error: %s", pluginFileName, err)
+	if err = env.Start(); err != nil {
+		log.Error("failed to start environment: %s", err)
 		return err
 	}
 
@@ -229,14 +228,14 @@ func (testRunner *TestRunner) runSingle(t ginkgo.GinkgoTestingT, reporter *Repor
 	test, err := readTest(p)
 
 	if err != nil {
-		return fmt.Errorf("failed to read schemas from '%s': %s", pluginFileName, err)
+		return fmt.Errorf("failed to read test: %s", err)
 	}
 
 	// prepare test
 	test(env)
 
 	// run test
-	ginkgo.RunSpecsWithCustomReporters(t, pluginFileName, []ginkgo.Reporter{reporter})
+	ginkgo.RunSpecsWithCustomReporters(t, fileName, []ginkgo.Reporter{reporter})
 	ginkgo.Reset()
 
 	// stop env
@@ -249,7 +248,7 @@ func (testRunner *TestRunner) runSingle(t ginkgo.GinkgoTestingT, reporter *Repor
 	manager.ClearExtensions()
 	schema.ClearManager()
 
-	log.Notice("Go extension test finished: %s", pluginFileName)
+	log.Notice("Go extension test finished: %s", fileName)
 
 	return nil
 }

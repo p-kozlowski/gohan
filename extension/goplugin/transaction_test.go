@@ -60,8 +60,7 @@ var _ = Describe("Transaction", func() {
 		)
 
 		BeforeEach(func() {
-			loaded, err := env.Load("test_data/ext_good/ext_good.so")
-			Expect(loaded).To(BeTrue())
+			err := env.Load("test_data/ext_good/ext_good.so")
 			Expect(err).To(BeNil())
 			Expect(env.Start()).To(Succeed())
 			testSchema = env.Schemas().Find("test")

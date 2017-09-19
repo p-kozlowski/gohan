@@ -45,30 +45,26 @@ var _ = Describe("Environment", func() {
 	Describe("Loading an extension", func() {
 		Context("File paths are corrupted", func() {
 			It("should not load plugin with wrong file extension", func() {
-				loaded, err := env.Load("/wrong/extension.not-so")
-				Expect(loaded).To(BeFalse())
+				err := env.Load("/wrong/extension.not-so")
 				Expect(err).To(Equal(fmt.Errorf("go extension must be a *.so file, file: /wrong/extension.not-so")))
 			})
 
 			It("should not load plugin from non-existing file", func() {
-				loaded, err := env.Load("/non/existing-plugin.so")
-				Expect(loaded).To(BeFalse())
+				err := env.Load("/non/existing-plugin.so")
 				Expect(err).To(Equal(fmt.Errorf("failed to load go extension: plugin.Open(/non/existing-plugin.so): realpath failed")))
 			})
 		})
 
 		Context("File paths are valid", func() {
 			It("should load, start and stop plugin which does export Init and Schemas functions", func() {
-				loaded, err := env.Load("test_data/ext_good/ext_good.so")
-				Expect(loaded).To(BeTrue())
+				err := env.Load("test_data/ext_good/ext_good.so")
 				Expect(err).To(BeNil())
 				Expect(env.Start()).To(Succeed())
 				env.Stop()
 			})
 
 			It("should not load plugin which does not export Init function", func() {
-				loaded, err := env.Load("test_data/ext_no_init/ext_no_init.so")
-				Expect(loaded).To(BeFalse())
+				err := env.Load("test_data/ext_no_init/ext_no_init.so")
 				Expect(err.Error()).To(ContainSubstring("symbol Init not found"))
 			})
 		})
@@ -80,8 +76,7 @@ var _ = Describe("Environment", func() {
 		)
 
 		BeforeEach(func() {
-			loaded, err := env.Load("test_data/ext_good/ext_good.so")
-			Expect(loaded).To(BeTrue())
+			err := env.Load("test_data/ext_good/ext_good.so")
 			Expect(err).To(BeNil())
 			Expect(env.Start()).To(Succeed())
 			testSchema = env.Schemas().Find("test")
@@ -128,8 +123,7 @@ var _ = Describe("Environment", func() {
 		)
 
 		BeforeEach(func() {
-			loaded, err := env.Load("test_data/ext_good/ext_good.so")
-			Expect(loaded).To(BeTrue())
+			err := env.Load("test_data/ext_good/ext_good.so")
 			Expect(err).To(BeNil())
 			Expect(env.Start()).To(Succeed())
 			testSchema = env.Schemas().Find("test")
