@@ -21,6 +21,8 @@ import (
 
 	"time"
 
+	"context"
+
 	"github.com/cloudwan/gohan/extension/goext"
 	"github.com/cloudwan/gohan/extension/goplugin"
 	"github.com/cloudwan/gohan/extension/goplugin/test_data/ext_good/test"
@@ -324,6 +326,25 @@ var _ = Describe("Environment", func() {
 					done <- true
 				}()
 
+				Eventually(done, time.Millisecond*500).Should(Receive())
+			})
+
+			It("should not overwrite existing timeouts", func() {
+				err := env.LoadExtensionsForPath(manager.Extensions, time.Hour, nil, "wait_for_context_cancel")
+				Expect(err).To(Succeed())
+
+				requestContext := goext.MakeContext()
+				ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
+				requestContext["context"] = ctx
+
+				done := make(chan bool, 1)
+				go func() {
+					defer GinkgoRecover()
+					Expect(env.HandleEvent("wait_for_context_cancel", requestContext)).To(Succeed())
+					done <- true
+				}()
+
+				cancel()
 				Eventually(done, time.Millisecond*500).Should(Receive())
 			})
 		})

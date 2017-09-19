@@ -344,16 +344,15 @@ func sortHandlers(handlers PrioritizedHandlers) (priorities []int) {
 
 // HandleEvent handles an event
 func (env *Environment) HandleEvent(event string, requestContext map[string]interface{}) error {
-	done := make(chan bool, 1)
-	defer func() {
-		done <- true
-	}()
+	if !hasCancel(requestContext) {
+		done := make(chan bool, 1)
+		defer func() {
+			done <- true
+		}()
 
-	ctx, cancel := env.buildContext(event)
+		addCancel(env, event, requestContext, done)
+	}
 
-	cancelOnPeerDisconnect(requestContext, cancel, done)
-
-	requestContext["context"] = ctx
 	requestContext["event_type"] = event
 	// dispatch to schema handlers
 	if schemaPrioritizedSchemaHandlers, ok := env.schemaHandlers[event]; ok {
@@ -397,6 +396,17 @@ func (env *Environment) HandleEvent(event string, requestContext map[string]inte
 	return nil
 }
 
+func hasCancel(requestContext map[string]interface{}) bool {
+	_, cancelFound := requestContext["context"]
+	return cancelFound
+}
+
+func addCancel(env *Environment, event string, requestContext map[string]interface{}, done <-chan bool) {
+	ctx, cancel := buildCancel(env, event)
+	cancelOnPeerDisconnect(requestContext, cancel, done)
+	requestContext["context"] = ctx
+}
+
 func cancelOnPeerDisconnect(requestContext map[string]interface{}, cancel context.CancelFunc, done <-chan bool) {
 	closeNotify := getCloseChannel(requestContext)
 	go func() {
@@ -420,7 +430,7 @@ func getCloseChannel(requestContext map[string]interface{}) <-chan bool {
 	return closeNotify
 }
 
-func (env *Environment) buildContext(event string) (ctx context.Context, cancel context.CancelFunc) {
+func buildCancel(env *Environment, event string) (ctx context.Context, cancel context.CancelFunc) {
 	selectedTimeLimit := env.timeLimit
 	for _, timeLimit := range env.timeLimits {
 		if timeLimit.Match(event) {
