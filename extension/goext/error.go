@@ -24,6 +24,14 @@ type Error struct {
 	Err  error
 }
 
+// NewError returns a new error
+func NewError(code ErrorCode, err error) Error {
+	return Error{
+		Code: code,
+		Err:  err,
+	}
+}
+
 // Error returns error message
 func (e Error) Error() string {
 	return e.Err.Error() + " (" + string(e.Code) + ")"
