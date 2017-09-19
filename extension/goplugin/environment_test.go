@@ -276,54 +276,56 @@ var _ = Describe("Environment", func() {
 			Expect(defaultCalled).To(BeTrue())
 		})
 
-		It("should exit gracefully when HTTP peer disconnects", func() {
-			closeNotifier := SimpleCloseNotifier{make(chan bool, 1)}
+		Context("execution termination", func() {
+			It("should exit gracefully when HTTP peer disconnects", func() {
+				closeNotifier := SimpleCloseNotifier{make(chan bool, 1)}
 
-			context := goext.MakeContext()
-			context["http_response"] = closeNotifier
+				context := goext.MakeContext()
+				context["http_response"] = closeNotifier
 
-			done := make(chan bool, 1)
-			go func() {
-				defer GinkgoRecover()
-				Expect(env.HandleEvent("wait_for_context_cancel", context)).To(Succeed())
-				done <- true
-			}()
+				done := make(chan bool, 1)
+				go func() {
+					defer GinkgoRecover()
+					Expect(env.HandleEvent("wait_for_context_cancel", context)).To(Succeed())
+					done <- true
+				}()
 
-			closeNotifier.Close()
+				closeNotifier.Close()
 
-			Eventually(done).Should(Receive())
-		})
+				Eventually(done).Should(Receive())
+			})
 
-		It("should exit gracefully on global execution timeout", func() {
-			err := env.LoadExtensionsForPath(manager.Extensions, time.Millisecond*100, nil, "wait_for_context_cancel")
-			Expect(err).To(Succeed())
+			It("should exit gracefully on global execution timeout", func() {
+				err := env.LoadExtensionsForPath(manager.Extensions, time.Millisecond*100, nil, "wait_for_context_cancel")
+				Expect(err).To(Succeed())
 
-			done := make(chan bool, 1)
-			go func() {
-				defer GinkgoRecover()
-				Expect(env.HandleEvent("wait_for_context_cancel", goext.MakeContext())).To(Succeed())
-				done <- true
-			}()
+				done := make(chan bool, 1)
+				go func() {
+					defer GinkgoRecover()
+					Expect(env.HandleEvent("wait_for_context_cancel", goext.MakeContext())).To(Succeed())
+					done <- true
+				}()
 
-			Eventually(done, time.Millisecond*500).Should(Receive())
-		})
+				Eventually(done, time.Millisecond*500).Should(Receive())
+			})
 
-		It("should exit gracefully on path execution timeout", func() {
-			timeLimits := []*schema.PathEventTimeLimit{
-				schema.NewPathEventTimeLimit(".*", "wait_for_context_cancel", time.Millisecond*100),
-			}
+			It("should exit gracefully on path execution timeout", func() {
+				timeLimits := []*schema.PathEventTimeLimit{
+					schema.NewPathEventTimeLimit(".*", "wait_for_context_cancel", time.Millisecond*100),
+				}
 
-			err := env.LoadExtensionsForPath(manager.Extensions, 0, timeLimits, "wait_for_context_cancel")
-			Expect(err).To(Succeed())
+				err := env.LoadExtensionsForPath(manager.Extensions, 0, timeLimits, "wait_for_context_cancel")
+				Expect(err).To(Succeed())
 
-			done := make(chan bool, 1)
-			go func() {
-				defer GinkgoRecover()
-				Expect(env.HandleEvent("wait_for_context_cancel", goext.MakeContext())).To(Succeed())
-				done <- true
-			}()
+				done := make(chan bool, 1)
+				go func() {
+					defer GinkgoRecover()
+					Expect(env.HandleEvent("wait_for_context_cancel", goext.MakeContext())).To(Succeed())
+					done <- true
+				}()
 
-			Eventually(done, time.Millisecond*500).Should(Receive())
+				Eventually(done, time.Millisecond*500).Should(Receive())
+			})
 		})
 	})
 })
