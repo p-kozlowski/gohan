@@ -41,6 +41,7 @@ func Init(env goext.IEnvironment) error {
 	}
 	testSchema.RegisterRawType(test.Test{})
 	testSchema.RegisterEventHandler("wait_for_context_cancel", HandleWaitForContextCancel, goext.PriorityDefault)
+	testSchema.RegisterEventHandler("echo", HandleEcho, goext.PriorityDefault)
 	return nil
 }
 
@@ -55,4 +56,10 @@ func HandleWaitForContextCancel(requestContext goext.Context, _ goext.Resource, 
 	}
 
 	panic("test extension: something went terribly wrong")
+}
+
+func HandleEcho(requestContext goext.Context, _ goext.Resource, env goext.IEnvironment) error {
+	env.Logger().Debug("Handling echo")
+	requestContext["response"] = requestContext["input"]
+	return nil
 }
