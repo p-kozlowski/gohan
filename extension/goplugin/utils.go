@@ -13,13 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package goext
+package goplugin
 
-// ICore is an interface to core parts of Gohan: event triggering and registering
-type ICore interface {
-	TriggerEvent(event string, context Context) error
-	HandleEvent(event string, context Context) error
+import "github.com/twinj/uuid"
 
-	RegisterEventHandler(eventName string, handler func(context Context, environment IEnvironment) error, priority int)
-	RegisterSchemaEventHandler(schemaID string, eventName string, handler func(context Context, resource Resource, environment IEnvironment) error, priority int)
+// Utils is an implementation of IUtils
+type Utils struct{}
+
+// NewUUID create a new unique ID
+func (utils *Utils) NewUUID() string {
+	return uuid.NewV4().String()
 }

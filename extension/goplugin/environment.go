@@ -125,6 +125,16 @@ func (env *Environment) Types() map[string]reflect.Type {
 	return env.types
 }
 
+// Utils returns an implementation to Utils interface
+func (env *Environment) Utils() goext.IUtils {
+	return &Utils{}
+}
+
+// Config returns an implementation to Config interface
+func (env *Environment) Config() goext.IConfig {
+	return &Config{}
+}
+
 // Core returns an implementation to Core interface
 func (env *Environment) Core() goext.ICore {
 	return env.coreImpl
