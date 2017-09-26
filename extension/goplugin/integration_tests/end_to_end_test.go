@@ -78,7 +78,7 @@ var _ = Describe("Environment", func() {
 		return nil
 	}
 
-	BeforeEach(func() {
+	BeforeSuite(func() {
 		var err error
 		testDB, err = db.ConnectDB(dbType, conn, db.DefaultMaxOpenConn, options.Default())
 		Expect(err).ToNot(HaveOccurred(), "Failed to connect database.")
@@ -86,7 +86,7 @@ var _ = Describe("Environment", func() {
 		Expect(err).ToNot(HaveOccurred(), "Failed to start test server.")
 	})
 
-	AfterEach(func() {
+	AfterSuite(func() {
 		schema.ClearManager()
 		os.Remove(conn)
 	})
@@ -95,6 +95,12 @@ var _ = Describe("Environment", func() {
 		It("invokes registered Golang handlers", func() {
 			res := testURL("POST", baseURL+"/v0.1/tests/echo", adminTokenID, map[string]interface{}{"test": "success"}, http.StatusOK)
 			Expect(res.(map[string]interface{})).To(HaveKeyWithValue("test", "success"))
+		})
+
+		It("triggers JS handlers from Golang plugins", func() {
+			res := testURL("POST", baseURL+"/v0.1/tests/invoke_js", adminTokenID, map[string]interface{}{}, http.StatusOK)
+			Expect(res.(map[string]interface{})).To(HaveKeyWithValue("js_called", true))
+			Expect(res.(map[string]interface{})).To(HaveKeyWithValue("id_valid", true))
 		})
 	})
 })

@@ -16,6 +16,8 @@
 package goplugin
 
 import (
+	"fmt"
+
 	"github.com/cloudwan/gohan/extension"
 	"github.com/cloudwan/gohan/extension/goext"
 )
@@ -35,16 +37,45 @@ func (core *Core) RegisterEventHandler(eventName string, handler func(context go
 	core.env.RegisterEventHandler(eventName, handler, priority)
 }
 
+func getSchemaId(context goext.Context) (string, error) {
+
+	rawSchemaID, ok := context["schema_id"]
+	if !ok {
+		return "", fmt.Errorf("TriggerEvent: schema_id missing in context")
+	}
+
+	return rawSchemaID.(string), nil
+}
+
+func ensureRawTxInContext(context goext.Context) {
+	tx, _ := contextGetTransaction(context)
+	contextSetTransaction(context, tx)
+}
+
 // TriggerEvent causes the given event to be handled in all environments (across different-language extensions)
 func (core *Core) TriggerEvent(event string, context goext.Context) error {
-	schemaID := ""
-
-	if s, ok := context["schema"]; ok {
-		schemaID = s.(goext.ISchema).ID()
-	} else {
-		log.Panic("TriggerEvent: missing schema in context")
+	schemaID, err := getSchemaId(context)
+	if err != nil {
+		log.Panic(err)
 	}
-	context["schema_id"] = schemaID
+
+	if rawSchema, hasSchema := context["schema"]; hasSchema {
+		defer func() {
+			context["schema"] = rawSchema
+		}()
+	} else {
+		defer func() {
+			delete(context, "schema")
+		}()
+	}
+	context["schema"] = core.env.Schemas().Find(schemaID).RawSchema()
+
+	if rawTx, hasTx := context["transaction"]; hasTx {
+		defer func() {
+			context["transaction"] = rawTx
+		}()
+		ensureRawTxInContext(context)
+	}
 
 	envManager := extension.GetManager()
 	if env, found := envManager.GetEnvironment(schemaID); found {

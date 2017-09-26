@@ -190,7 +190,7 @@ func (t *Transaction) LockList(ctx context.Context, schema goext.ISchema, filter
 
 // RawTransaction returns the raw transaction
 func (t *Transaction) RawTransaction() interface{} {
-	return t.RawTransaction()
+	return t.tx
 }
 
 // Query executes a query
