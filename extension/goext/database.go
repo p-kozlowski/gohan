@@ -16,11 +16,11 @@
 package goext
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
 	gohan_logger "github.com/cloudwan/gohan/log"
-	"fmt"
 )
 
 // DbOptions represent database options
