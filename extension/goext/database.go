@@ -118,7 +118,7 @@ func withinDetached(db IDatabase, context Context, txBegin func() (ITransaction,
 }
 
 func within(env IEnvironment, context Context, txBegin func() (ITransaction, error), fn func(tx ITransaction) error) error {
-	rawTx, joinable := env.Util().GetTransaction(context)
+	rawTx, joinable := env.Utils().GetTransaction(context)
 
 	if joinable {
 		return withinJoinable(rawTx.(ITransaction), fn)

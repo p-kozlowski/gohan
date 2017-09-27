@@ -15,8 +15,23 @@
 
 package goext
 
-// IUtils is an interface to utility functions
-type IUtils interface {
-	NewUUID() string
-	GetTransaction(context Context) (ITransaction, bool)
+//MockModules ...
+type MockModules struct {
+	Core, Logger, Schemas, Sync, Database, Http, Auth, Utils, Config bool
+}
+
+// MockIEnvironment is the only scope of Gohan available for a go unit tests extensions;
+// it should not be used outside unit tests
+type MockIEnvironment interface {
+	IEnvironment
+	SetMockModules(modules MockModules)
+	MockCore() *MockICore
+	MockLogger() *MockILogger
+	MockSchemas() *MockISchemas
+	MockSync() *MockISync
+	MockDatabase() *MockIDatabase
+	MockHttp() *MockIHTTP
+	MockAuth() *MockIAuth
+	MockConfig() *MockIConfig
+	MockUtils() *MockIUtils
 }

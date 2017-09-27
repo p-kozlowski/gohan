@@ -15,7 +15,12 @@
 
 package goplugin
 
-import "github.com/twinj/uuid"
+import (
+	"github.com/twinj/uuid"
+	"github.com/cloudwan/gohan/extension/goext"
+	"github.com/cloudwan/gohan/db/transaction"
+	"fmt"
+)
 
 // Utils is an implementation of IUtils
 type Utils struct{}
@@ -23,4 +28,24 @@ type Utils struct{}
 // NewUUID create a new unique ID
 func (utils *Utils) NewUUID() string {
 	return uuid.NewV4().String()
+}
+
+func (utils *Utils) GetTransaction(context goext.Context) (goext.ITransaction, bool) {
+	return contextGetTransaction(context)
+}
+
+func contextGetTransaction(ctx goext.Context) (goext.ITransaction, bool) {
+	ctxTx := ctx["transaction"]
+	if ctxTx == nil {
+		return nil, false
+	}
+
+	switch tx := ctxTx.(type) {
+	case goext.ITransaction:
+		return tx, true
+	case transaction.Transaction:
+		return &Transaction{tx}, true
+	default:
+		panic(fmt.Sprintf("Unknown transaction type in context: %+v", ctxTx))
+	}
 }

@@ -1,0 +1,237 @@
+package goplugin
+
+import (
+	"reflect"
+	"time"
+
+	"github.com/cloudwan/gohan/extension"
+	"github.com/cloudwan/gohan/extension/goext"
+	"github.com/cloudwan/gohan/schema"
+	"github.com/golang/mock/gomock"
+)
+
+type MockIEnvironment struct {
+	env          *Environment
+	mockModules  goext.MockModules
+	testReporter gomock.TestReporter
+
+	core     goext.ICore
+	logger   goext.ILogger
+	schemas  goext.ISchemas
+	sync     goext.ISync
+	database goext.IDatabase
+	http     goext.IHTTP
+	auth     goext.IAuth
+	config   goext.IConfig
+	utils    goext.IUtils
+}
+
+func (mockEnv *MockIEnvironment) SetMockModules(modules goext.MockModules) {
+	mockEnv.mockModules = modules
+	ctrl := NewController(mockEnv.testReporter)
+
+	if mockEnv.mockModules.Core {
+		mockEnv.core = goext.NewMockICore(ctrl)
+	} else {
+		mockEnv.core = mockEnv.env.Core()
+	}
+
+	if mockEnv.mockModules.Logger {
+		mockEnv.logger = goext.NewMockILogger(ctrl)
+	} else {
+		mockEnv.logger = mockEnv.env.Logger()
+	}
+
+	if mockEnv.mockModules.Schemas {
+		mockEnv.schemas = goext.NewMockISchemas(ctrl)
+	} else {
+		mockEnv.schemas = mockEnv.env.Schemas()
+	}
+
+	if mockEnv.mockModules.Sync {
+		mockEnv.sync = goext.NewMockISync(ctrl)
+	} else {
+		mockEnv.sync = mockEnv.env.Sync()
+	}
+
+	if mockEnv.mockModules.Database {
+		mockEnv.database = goext.NewMockIDatabase(ctrl)
+	} else {
+		mockEnv.database = mockEnv.env.Database()
+	}
+
+	if mockEnv.mockModules.Http {
+		mockEnv.http = goext.NewMockIHTTP(ctrl)
+	} else {
+		mockEnv.http = mockEnv.env.HTTP()
+	}
+
+	if mockEnv.mockModules.Auth {
+		mockEnv.auth = goext.NewMockIAuth(ctrl)
+	} else {
+		mockEnv.auth = mockEnv.env.Auth()
+	}
+
+	if mockEnv.mockModules.Utils {
+		mockEnv.utils = goext.NewMockIUtils(ctrl)
+	} else {
+		mockEnv.utils = mockEnv.env.Utils()
+	}
+
+	if mockEnv.mockModules.Config {
+		mockEnv.config = goext.NewMockIConfig(ctrl)
+	} else {
+		mockEnv.config = mockEnv.env.Config()
+	}
+}
+
+func (mockEnv *MockIEnvironment) Core() goext.ICore {
+	return mockEnv.core
+}
+
+func (mockEnv *MockIEnvironment) Logger() goext.ILogger {
+	return mockEnv.logger
+}
+
+func (mockEnv *MockIEnvironment) Schemas() goext.ISchemas {
+	return mockEnv.schemas
+}
+
+func (mockEnv *MockIEnvironment) Sync() goext.ISync {
+	return mockEnv.sync
+}
+
+func (mockEnv *MockIEnvironment) Database() goext.IDatabase {
+	return mockEnv.database
+}
+
+func (mockEnv *MockIEnvironment) HTTP() goext.IHTTP {
+	return mockEnv.http
+}
+
+func (mockEnv *MockIEnvironment) Auth() goext.IAuth {
+	return mockEnv.auth
+}
+
+func (mockEnv *MockIEnvironment) Config() goext.IConfig {
+	return mockEnv.config
+}
+
+func (mockEnv *MockIEnvironment) Utils() goext.IUtils {
+	return mockEnv.utils
+}
+
+func (mockEnv *MockIEnvironment) MockCore() *goext.MockICore {
+	return mockEnv.core.(*goext.MockICore)
+}
+
+func (mockEnv *MockIEnvironment) MockLogger() *goext.MockILogger {
+	return mockEnv.logger.(*goext.MockILogger)
+}
+
+func (mockEnv *MockIEnvironment) MockSchemas() *goext.MockISchemas {
+	return mockEnv.schemas.(*goext.MockISchemas)
+}
+
+func (mockEnv *MockIEnvironment) MockSync() *goext.MockISync {
+	return mockEnv.sync.(*goext.MockISync)
+}
+
+func (mockEnv *MockIEnvironment) MockDatabase() *goext.MockIDatabase {
+	return mockEnv.database.(*goext.MockIDatabase)
+}
+
+func (mockEnv *MockIEnvironment) MockHttp() *goext.MockIHTTP {
+	return mockEnv.http.(*goext.MockIHTTP)
+}
+
+func (mockEnv *MockIEnvironment) MockAuth() *goext.MockIAuth {
+	return mockEnv.auth.(*goext.MockIAuth)
+}
+
+func (mockEnv *MockIEnvironment) MockConfig() *goext.MockIConfig {
+	return mockEnv.config.(*goext.MockIConfig)
+}
+
+func (mockEnv *MockIEnvironment) MockUtils() *goext.MockIUtils {
+	return mockEnv.utils.(*goext.MockIUtils)
+}
+
+func (mockEnv *MockIEnvironment) Reset() {
+	mockEnv.SetMockModules(goext.MockModules{})
+	mockEnv.env.Reset()
+	mockEnv.env.bindSchemasToEnv(mockEnv)
+}
+
+func (mockEnv *MockIEnvironment) Clone() extension.Environment {
+	return mockEnv
+}
+
+func (mockEnv *MockIEnvironment) HandleEvent(event string, context map[string]interface{}) error {
+	return handleEventForEnv(mockEnv, event, context)
+}
+
+func (mockEnv *MockIEnvironment) getSchemaHandlers(event string) (SchemaPrioritizedSchemaHandlers, bool) {
+	return mockEnv.env.getSchemaHandlers(event)
+}
+
+func (mockEnv *MockIEnvironment) getHandlers(event string) (PrioritizedHandlers, bool) {
+	return mockEnv.env.getHandlers(event)
+}
+
+func (mockEnv *MockIEnvironment) dispatchSchemaEvent(prioritizedSchemaHandlers PrioritizedSchemaHandlers, sch Schema, event string, context map[string]interface{}) error {
+	return dispatchSchemaEventForEnv(mockEnv, prioritizedSchemaHandlers, sch, event, context)
+}
+
+func (mockEnv *MockIEnvironment) resourceFromContext(sch Schema, context map[string]interface{}) (res goext.Resource, err error) {
+	return mockEnv.env.resourceFromContext(sch, context)
+}
+
+func (mockEnv *MockIEnvironment) RegisterRawType(name string, typeValue interface{}) {
+	mockEnv.env.RegisterRawType(name, typeValue)
+}
+
+func (mockEnv *MockIEnvironment) RegisterType(name string, typeValue interface{}) {
+	mockEnv.env.RegisterType(name, typeValue)
+}
+
+func (mockEnv *MockIEnvironment) RegisterSchemaEventHandler(schemaID string, event string, handler func(context goext.Context, resource goext.Resource, environment goext.IEnvironment) error, priority int) {
+	mockEnv.env.RegisterSchemaEventHandler(schemaID, event, handler, priority)
+}
+
+func (mockEnv *MockIEnvironment) getRawType(schemaID string) (reflect.Type, bool) {
+	return mockEnv.env.getRawType(schemaID)
+}
+
+func (mockEnv *MockIEnvironment) getType(schemaID string) (reflect.Type, bool) {
+	return mockEnv.env.getType(schemaID)
+}
+
+func (mockEnv *MockIEnvironment) getTraceID() string {
+	return mockEnv.env.getTraceID()
+}
+
+func (mockEnv *MockIEnvironment) getTimeLimts() []*schema.EventTimeLimit {
+	return mockEnv.env.getTimeLimts()
+}
+
+func (mockEnv *MockIEnvironment) getTimeLimt() time.Duration {
+	return mockEnv.env.getTimeLimt()
+}
+
+func (mockEnv *MockIEnvironment) updateResourceFromContext(resource interface{}, context goext.Context) error {
+	return mockEnv.env.updateResourceFromContext(resource, context)
+}
+
+func (mockEnv *MockIEnvironment) IsEventHandled(event string, context map[string]interface{}) bool {
+	return mockEnv.env.IsEventHandled(event, context)
+}
+
+func (mockEnv *MockIEnvironment) LoadExtensionsForPath(extensions []*schema.Extension, timeLimit time.Duration, timeLimits []*schema.PathEventTimeLimit, path string) error {
+	return mockEnv.env.LoadExtensionsForPath(extensions, timeLimit, timeLimits, path)
+}
+
+func NewMockIEnvironment(env *Environment, testReporter gomock.TestReporter) *MockIEnvironment {
+	mockIEnvironment := &MockIEnvironment{env: env, testReporter: testReporter}
+	return mockIEnvironment
+}

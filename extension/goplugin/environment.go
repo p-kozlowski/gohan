@@ -94,6 +94,25 @@ type Environment struct {
 	types    map[string]reflect.Type
 }
 
+// Internal interface for goplugin environment
+type IEnvironment interface {
+	goext.IEnvironment
+	extension.Environment
+	getSchemaHandlers(event string) (SchemaPrioritizedSchemaHandlers, bool)
+	getHandlers(event string) (PrioritizedHandlers, bool)
+	dispatchSchemaEvent(prioritizedSchemaHandlers PrioritizedSchemaHandlers, sch Schema, event string, context map[string]interface{}) error
+	resourceFromContext(sch Schema, context map[string]interface{}) (res goext.Resource, err error)
+	getRawType(schemaID string) (reflect.Type, bool)
+	getType(schemaID string) (reflect.Type, bool)
+	updateResourceFromContext(resource interface{}, context goext.Context) error
+	RegisterSchemaEventHandler(schemaID string, event string, handler func(context goext.Context, resource goext.Resource, environment goext.IEnvironment) error, priority int)
+	RegisterRawType(name string, typeValue interface{})
+	RegisterType(name string, typeValue interface{})
+	getTraceID() string
+	getTimeLimts() []*schema.EventTimeLimit
+	getTimeLimt() time.Duration
+}
+
 // NewEnvironment create new gohan extension rawEnvironment based on context
 func NewEnvironment(name string, beforeStartHook func(env *Environment) error, afterStopHook func(env *Environment)) *Environment {
 	env := &Environment{
@@ -194,6 +213,10 @@ func (env *Environment) bindLogger() {
 
 func (env *Environment) bindSchemas() {
 	env.schemasImpl = NewSchemas(env)
+}
+
+func (env *Environment) bindSchemasToEnv(envToBind IEnvironment) {
+	env.schemasImpl = NewSchemas(envToBind)
 }
 
 func (env *Environment) bindSync(sync gohan_sync.Sync) {
@@ -325,6 +348,10 @@ func (env *Environment) LoadExtensionsForPath(extensions []*schema.Extension, ti
 }
 
 func (env *Environment) dispatchSchemaEvent(prioritizedSchemaHandlers PrioritizedSchemaHandlers, sch Schema, event string, context map[string]interface{}) error {
+	return dispatchSchemaEventForEnv(env, prioritizedSchemaHandlers, sch, event, context)
+}
+
+func dispatchSchemaEventForEnv(env IEnvironment, prioritizedSchemaHandlers PrioritizedSchemaHandlers, sch Schema, event string, context map[string]interface{}) error {
 	env.Logger().Debugf("Starting event: %s, schema: %s", event, sch.raw.ID)
 	defer env.Logger().Debugf("Finished event: %s, schema: %s", event, sch.raw.ID)
 	if resource, err := env.resourceFromContext(sch, context); err == nil {
@@ -364,8 +391,44 @@ func sortHandlers(handlers PrioritizedHandlers) (priorities []int) {
 	return priorities
 }
 
+func (env *Environment) getSchemaHandlers(event string) (SchemaPrioritizedSchemaHandlers, bool) {
+	handler, ok := env.schemaHandlers[event]
+	return handler, ok
+}
+
+func (env *Environment) getHandlers(event string) (PrioritizedHandlers, bool) {
+	handler, ok := env.handlers[event]
+	return handler, ok
+}
+
+func (env *Environment) getRawType(schemaID string) (reflect.Type, bool) {
+	rawType, ok := env.rawTypes[schemaID]
+	return rawType, ok
+}
+
+func (env *Environment) getType(schemaID string) (reflect.Type, bool) {
+	resourceType, ok := env.types[schemaID]
+	return resourceType, ok
+}
+
+func (env *Environment) getTraceID() string {
+	return env.traceID
+}
+
+func (env *Environment) getTimeLimts() []*schema.EventTimeLimit {
+	return env.timeLimits
+}
+
+func (env *Environment) getTimeLimt() time.Duration {
+	return env.timeLimit
+}
+
 // HandleEvent handles an event
 func (env *Environment) HandleEvent(event string, requestContext map[string]interface{}) error {
+	return handleEventForEnv(env, event, requestContext)
+}
+
+func handleEventForEnv(env IEnvironment, event string, requestContext map[string]interface{}) error {
 	if !hasCancel(requestContext) {
 		done := make(chan bool, 1)
 		defer func() {
@@ -377,7 +440,7 @@ func (env *Environment) HandleEvent(event string, requestContext map[string]inte
 
 	requestContext["event_type"] = event
 	// dispatch to schema handlers
-	if schemaPrioritizedSchemaHandlers, ok := env.schemaHandlers[event]; ok {
+	if schemaPrioritizedSchemaHandlers, ok := env.getSchemaHandlers(event); ok {
 		if iSchemaID, ok := requestContext["schema_id"]; ok {
 			schemaID := iSchemaID.(string)
 			if prioritizedSchemaHandlers, ok := schemaPrioritizedSchemaHandlers[schemaID]; ok {
@@ -404,7 +467,7 @@ func (env *Environment) HandleEvent(event string, requestContext map[string]inte
 	}
 
 	// dispatch to generic handlers
-	if prioritizedEventHandlers, ok := env.handlers[event]; ok {
+	if prioritizedEventHandlers, ok := env.getHandlers(event); ok {
 		for _, priority := range sortHandlers(prioritizedEventHandlers) {
 			for index, eventHandler := range prioritizedEventHandlers[priority] {
 				if err := eventHandler(requestContext, env); err != nil {
@@ -423,7 +486,7 @@ func hasCancel(requestContext map[string]interface{}) bool {
 	return cancelFound
 }
 
-func addCancel(env *Environment, event string, requestContext map[string]interface{}, done <-chan bool) {
+func addCancel(env IEnvironment, event string, requestContext map[string]interface{}, done <-chan bool) {
 	ctx, cancel := buildCancel(env, event)
 	cancelOnPeerDisconnect(requestContext, cancel, done)
 	requestContext["context"] = ctx
@@ -452,9 +515,9 @@ func getCloseChannel(requestContext map[string]interface{}) <-chan bool {
 	return closeNotify
 }
 
-func buildCancel(env *Environment, event string) (ctx context.Context, cancel context.CancelFunc) {
-	selectedTimeLimit := env.timeLimit
-	for _, timeLimit := range env.timeLimits {
+func buildCancel(env IEnvironment, event string) (ctx context.Context, cancel context.CancelFunc) {
+	selectedTimeLimit := env.getTimeLimt()
+	for _, timeLimit := range env.getTimeLimts() {
 		if timeLimit.Match(event) {
 			selectedTimeLimit = timeLimit.TimeDuration
 			break
