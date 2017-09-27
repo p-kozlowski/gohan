@@ -37,8 +37,31 @@ func (core *Core) RegisterEventHandler(eventName string, handler func(context go
 	core.env.RegisterEventHandler(eventName, handler, priority)
 }
 
-func getSchemaId(context goext.Context) (string, error) {
+// TriggerEvent causes the given event to be handled in all environments (across different-language extensions)
+func (core *Core) TriggerEvent(event string, context goext.Context) error {
+	schemaID, err := getSchemaId(context)
+	if err != nil {
+		log.Panic(err)
+	}
 
+	// JS extensions expect context["schema"] to be a *schema.Schema.
+	// If a schema is already set, we should overwrite it with proper type and
+	// restore it once we're done with handling the event
+	defer restoreOriginalSchema(context)()
+	context["schema"] = core.env.Schemas().Find(schemaID).RawSchema()
+
+	// as above, if present, context["transaction"] should be a transaction.Transaction
+	defer restoreOriginalTransaction(context)()
+	ensureRawTxInContext(context)
+
+	envManager := extension.GetManager()
+	if env, found := envManager.GetEnvironment(schemaID); found {
+		return env.HandleEvent(event, context)
+	}
+	return nil
+}
+
+func getSchemaId(context goext.Context) (string, error) {
 	rawSchemaID, ok := context["schema_id"]
 	if !ok {
 		return "", fmt.Errorf("TriggerEvent: schema_id missing in context")
@@ -47,41 +70,31 @@ func getSchemaId(context goext.Context) (string, error) {
 	return rawSchemaID.(string), nil
 }
 
-func ensureRawTxInContext(context goext.Context) {
-	tx, _ := contextGetTransaction(context)
-	contextSetTransaction(context, tx)
+func restoreOriginalSchema(context goext.Context) func() {
+	return restoreContextByKey(context, "schema")
 }
 
-// TriggerEvent causes the given event to be handled in all environments (across different-language extensions)
-func (core *Core) TriggerEvent(event string, context goext.Context) error {
-	schemaID, err := getSchemaId(context)
-	if err != nil {
-		log.Panic(err)
-	}
+func restoreOriginalTransaction(context goext.Context) func() {
+	return restoreContextByKey(context, "transaction")
+}
 
-	if rawSchema, hasSchema := context["schema"]; hasSchema {
-		defer func() {
-			context["schema"] = rawSchema
-		}()
+func restoreContextByKey(context goext.Context, key string) func() {
+	if originalValue, hasValue := context[key]; hasValue {
+		return func() {
+			context[key] = originalValue
+		}
 	} else {
-		defer func() {
-			delete(context, "schema")
-		}()
+		return func() {
+			delete(context, key)
+		}
 	}
-	context["schema"] = core.env.Schemas().Find(schemaID).RawSchema()
+}
 
-	if rawTx, hasTx := context["transaction"]; hasTx {
-		defer func() {
-			context["transaction"] = rawTx
-		}()
-		ensureRawTxInContext(context)
+// makes sure that context["transaction"] is a transaction.Transaction
+func ensureRawTxInContext(context goext.Context) {
+	if tx, hasTx := contextGetTransaction(context); hasTx {
+		contextSetTransaction(context, tx)
 	}
-
-	envManager := extension.GetManager()
-	if env, found := envManager.GetEnvironment(schemaID); found {
-		return env.HandleEvent(event, context)
-	}
-	return nil
 }
 
 // HandleEvent Causes the given event to be handled within the same environment
