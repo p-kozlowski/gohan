@@ -34,7 +34,6 @@ import (
 	"github.com/cloudwan/gohan/schema"
 	gohan_sync "github.com/cloudwan/gohan/sync"
 	"github.com/mohae/deepcopy"
-	"github.com/twinj/uuid"
 )
 
 var log = gohan_logger.NewLogger()
@@ -66,10 +65,6 @@ type SchemaPrioritizedSchemaHandlers map[string]PrioritizedSchemaHandlers
 // EventSchemaPrioritizedSchemaHandlers is a per-event per-schema prioritized list of schema handlers
 type EventSchemaPrioritizedSchemaHandlers map[string]SchemaPrioritizedSchemaHandlers
 
-func newTraceID() string {
-	return uuid.NewV4().String()
-}
-
 // Environment golang based environment for gohan extensions
 type Environment struct {
 	initFns         map[string]func(goext.IEnvironment) error
@@ -82,8 +77,8 @@ type Environment struct {
 	syncImpl     *Sync
 	databaseImpl *Database
 
-	name       string
-	traceID    string
+	name string
+
 	timeLimit  time.Duration
 	timeLimits []*schema.EventTimeLimit
 
@@ -110,7 +105,6 @@ type IEnvironment interface {
 	getHandlers(event string) (PrioritizedHandlers, bool)
 	getRawType(schemaID string) (reflect.Type, bool)
 	getType(schemaID string) (reflect.Type, bool)
-	getTraceID() string
 	getTimeLimts() []*schema.EventTimeLimit
 	getTimeLimt() time.Duration
 }
@@ -209,7 +203,7 @@ func (env *Environment) bindCore() {
 }
 
 func (env *Environment) bindLogger() {
-	env.loggerImpl = NewLogger(env)
+	env.loggerImpl = NewLogger()
 }
 
 func (env *Environment) bindSchemas() {
@@ -255,9 +249,6 @@ func (env *Environment) Start() error {
 	} else {
 		log.Debug("Before start init is not set for go environment: %s", env.name)
 	}
-
-	// generate trace ID
-	env.traceID = newTraceID()
 
 	// init extensions
 	log.Debug("Start go extension: %s", env.name)
@@ -410,10 +401,6 @@ func (env *Environment) getRawType(schemaID string) (reflect.Type, bool) {
 func (env *Environment) getType(schemaID string) (reflect.Type, bool) {
 	resourceType, ok := env.types[schemaID]
 	return resourceType, ok
-}
-
-func (env *Environment) getTraceID() string {
-	return env.traceID
 }
 
 func (env *Environment) getTimeLimts() []*schema.EventTimeLimit {
@@ -799,8 +786,6 @@ func (env *Environment) Stop() {
 	env.syncImpl = nil
 	env.databaseImpl = nil
 
-	env.traceID = ""
-
 	env.handlers = nil
 	env.schemaHandlers = nil
 
@@ -838,8 +823,6 @@ func (env *Environment) Clone() extension.Environment {
 		databaseImpl: env.databaseImpl.Clone(),
 
 		name: env.name,
-
-		traceID: newTraceID(),
 
 		handlers:       deepcopy.Copy(env.handlers).(EventPrioritizedHandlers),
 		schemaHandlers: deepcopy.Copy(env.schemaHandlers).(EventSchemaPrioritizedSchemaHandlers),
