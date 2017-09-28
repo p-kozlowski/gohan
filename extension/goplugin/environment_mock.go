@@ -222,10 +222,6 @@ func (mockEnv *MockIEnvironment) getType(schemaID string) (reflect.Type, bool) {
 	return mockEnv.env.getType(schemaID)
 }
 
-func (mockEnv *MockIEnvironment) getTraceID() string {
-	return mockEnv.env.getTraceID()
-}
-
 func (mockEnv *MockIEnvironment) getTimeLimts() []*schema.EventTimeLimit {
 	return mockEnv.env.getTimeLimts()
 }

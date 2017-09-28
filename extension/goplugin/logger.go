@@ -20,7 +20,7 @@ import (
 
 	"github.com/cloudwan/gohan/extension/goext"
 	gohan_log "github.com/cloudwan/gohan/log"
-	"github.com/satori/go.uuid"
+	"github.com/twinj/uuid"
 )
 
 const logModule = "[GOEXT]"
