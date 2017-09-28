@@ -525,7 +525,7 @@ func buildCancel(env IEnvironment, event string) (ctx context.Context, cancel co
 			break
 		}
 	}
-	if selectedTimeLimit != 0 {
+	if selectedTimeLimit > 0 {
 		ctx, cancel = context.WithTimeout(context.Background(), selectedTimeLimit)
 	} else {
 		ctx, cancel = context.WithCancel(context.Background())
