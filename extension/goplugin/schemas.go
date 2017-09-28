@@ -223,7 +223,7 @@ func (schema *Schema) listImpl(requestContext goext.Context, list listFunc) ([]i
 		defer tx.Close()
 	}
 
-	data, _, err := list(getContext(requestContext), tx)
+	data, _, err := list(goext.GetContext(requestContext), tx)
 
 	if err != nil {
 		return nil, err
@@ -246,14 +246,6 @@ func (schema *Schema) listImpl(requestContext goext.Context, list listFunc) ([]i
 	}
 
 	return res, nil
-}
-
-func getContext(requestContext goext.Context) context.Context {
-	if rawCtx, hasCtx := requestContext["context"]; hasCtx {
-		return rawCtx.(context.Context)
-	} else {
-		return context.Background()
-	}
 }
 
 // LockListRaw locks and returns raw resources
@@ -349,7 +341,7 @@ func (schema *Schema) fetchImpl(id string, requestContext goext.Context, fetch f
 
 	filter := goext.Filter{"id": id}
 
-	data, err := fetch(getContext(requestContext), tx, filter)
+	data, err := fetch(goext.GetContext(requestContext), tx, filter)
 
 	if err != nil {
 		if err == transaction.ErrResourceNotFound {
@@ -461,7 +453,7 @@ func (schema *Schema) create(rawResource interface{}, requestContext goext.Conte
 		}
 	}
 
-	if err = tx.Create(getContext(requestContext), schema, requestContext["resource"].(map[string]interface{})); err != nil {
+	if err = tx.Create(goext.GetContext(requestContext), schema, requestContext["resource"].(map[string]interface{})); err != nil {
 		return err
 	}
 
@@ -502,7 +494,7 @@ func (schema *Schema) createInTransaction(resource interface{}, requestContext g
 		}
 	}
 
-	if err = tx.Create(getContext(requestContext), schema, requestContext["resource"].(map[string]interface{})); err != nil {
+	if err = tx.Create(goext.GetContext(requestContext), schema, requestContext["resource"].(map[string]interface{})); err != nil {
 		return err
 	}
 
@@ -577,7 +569,7 @@ func (schema *Schema) update(rawResource interface{}, requestContext goext.Conte
 		}
 	}
 
-	if err = tx.Update(getContext(requestContext), schema, contextCopy["resource"].(map[string]interface{})); err != nil {
+	if err = tx.Update(goext.GetContext(requestContext), schema, contextCopy["resource"].(map[string]interface{})); err != nil {
 		return err
 	}
 
@@ -655,7 +647,7 @@ func (schema *Schema) delete(filter goext.Filter, requestContext goext.Context, 
 			}
 		}
 
-		if err = tx.Delete(getContext(requestContext), schema, resourceID); err != nil {
+		if err = tx.Delete(goext.GetContext(requestContext), schema, resourceID); err != nil {
 			return err
 		}
 
