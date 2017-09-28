@@ -225,7 +225,7 @@ func (testRunner *TestRunner) runSingle(t ginkgo.GinkgoTestingT, reporter *Repor
 	}
 
 	// prepare test
-	mockEnv.Reset()
+	mockEnv.Reset() // TODO remove
 	test(mockEnv)
 	mockEnv.Reset()
 

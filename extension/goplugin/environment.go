@@ -98,16 +98,18 @@ type Environment struct {
 type IEnvironment interface {
 	goext.IEnvironment
 	extension.Environment
-	getSchemaHandlers(event string) (SchemaPrioritizedSchemaHandlers, bool)
-	getHandlers(event string) (PrioritizedHandlers, bool)
-	dispatchSchemaEvent(prioritizedSchemaHandlers PrioritizedSchemaHandlers, sch Schema, event string, context map[string]interface{}) error
-	resourceFromContext(sch Schema, context map[string]interface{}) (res goext.Resource, err error)
-	getRawType(schemaID string) (reflect.Type, bool)
-	getType(schemaID string) (reflect.Type, bool)
-	updateResourceFromContext(resource interface{}, context goext.Context) error
+
 	RegisterSchemaEventHandler(schemaID string, event string, handler func(context goext.Context, resource goext.Resource, environment goext.IEnvironment) error, priority int)
 	RegisterRawType(name string, typeValue interface{})
 	RegisterType(name string, typeValue interface{})
+
+	dispatchSchemaEvent(prioritizedSchemaHandlers PrioritizedSchemaHandlers, sch Schema, event string, context map[string]interface{}) error
+	resourceFromContext(sch Schema, context map[string]interface{}) (res goext.Resource, err error)
+	updateResourceFromContext(resource interface{}, context goext.Context) error
+	getSchemaHandlers(event string) (SchemaPrioritizedSchemaHandlers, bool)
+	getHandlers(event string) (PrioritizedHandlers, bool)
+	getRawType(schemaID string) (reflect.Type, bool)
+	getType(schemaID string) (reflect.Type, bool)
 	getTraceID() string
 	getTimeLimts() []*schema.EventTimeLimit
 	getTimeLimt() time.Duration

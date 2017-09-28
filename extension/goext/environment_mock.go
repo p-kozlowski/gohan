@@ -15,7 +15,8 @@
 
 package goext
 
-//MockModules ...
+// MockModules indicates modules which should be mocked.
+// By default none of the modules are mocked so that MockIEnvironment behaves exactly the same as IEnvironment.
 type MockModules struct {
 	Core, Logger, Schemas, Sync, Database, Http, Auth, Utils, Config bool
 }
