@@ -18,7 +18,7 @@ package goext
 // MockModules indicates modules which should be mocked.
 // By default none of the modules are mocked so that MockIEnvironment behaves exactly the same as IEnvironment.
 type MockModules struct {
-	Core, Logger, Schemas, Sync, Database, Http, Auth, Utils, Config bool
+	Core, Logger, Schemas, Sync, Database, Http, Auth, Util, Config bool
 }
 
 // MockIEnvironment is the only scope of Gohan available for a go unit tests extensions;
@@ -34,5 +34,5 @@ type MockIEnvironment interface {
 	MockHttp() *MockIHTTP
 	MockAuth() *MockIAuth
 	MockConfig() *MockIConfig
-	MockUtils() *MockIUtils
+	MockUtil() *MockIUtil
 }

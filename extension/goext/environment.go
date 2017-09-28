@@ -21,7 +21,6 @@ import "encoding/json"
 // other packages must not be imported nor used
 type IEnvironment interface {
 	// modules
-	Utils() IUtils
 	Config() IConfig
 	Core() ICore
 	Logger() ILogger
@@ -30,6 +29,7 @@ type IEnvironment interface {
 	Database() IDatabase
 	HTTP() IHTTP
 	Auth() IAuth
+	Util() IUtil
 
 	// state
 	Reset()

@@ -38,7 +38,7 @@ type MockIEnvironment struct {
 	http     goext.IHTTP
 	auth     goext.IAuth
 	config   goext.IConfig
-	utils    goext.IUtils
+	util     goext.IUtil
 }
 
 func (mockEnv *MockIEnvironment) SetMockModules(modules goext.MockModules) {
@@ -87,10 +87,10 @@ func (mockEnv *MockIEnvironment) SetMockModules(modules goext.MockModules) {
 		mockEnv.auth = mockEnv.env.Auth()
 	}
 
-	if mockEnv.mockModules.Utils {
-		mockEnv.utils = goext.NewMockIUtils(ctrl)
+	if mockEnv.mockModules.Util {
+		mockEnv.util = goext.NewMockIUtil(ctrl)
 	} else {
-		mockEnv.utils = mockEnv.env.Utils()
+		mockEnv.util = mockEnv.env.Util()
 	}
 
 	if mockEnv.mockModules.Config {
@@ -132,8 +132,8 @@ func (mockEnv *MockIEnvironment) Config() goext.IConfig {
 	return mockEnv.config
 }
 
-func (mockEnv *MockIEnvironment) Utils() goext.IUtils {
-	return mockEnv.utils
+func (mockEnv *MockIEnvironment) Util() goext.IUtil {
+	return mockEnv.util
 }
 
 func (mockEnv *MockIEnvironment) MockCore() *goext.MockICore {
@@ -168,8 +168,8 @@ func (mockEnv *MockIEnvironment) MockConfig() *goext.MockIConfig {
 	return mockEnv.config.(*goext.MockIConfig)
 }
 
-func (mockEnv *MockIEnvironment) MockUtils() *goext.MockIUtils {
-	return mockEnv.utils.(*goext.MockIUtils)
+func (mockEnv *MockIEnvironment) MockUtil() *goext.MockIUtil {
+	return mockEnv.util.(*goext.MockIUtil)
 }
 
 func (mockEnv *MockIEnvironment) Reset() {

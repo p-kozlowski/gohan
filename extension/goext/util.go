@@ -15,8 +15,7 @@
 
 package goext
 
-// IUtils is an interface to utility functions
-type IUtils interface {
+type IUtil interface {
 	NewUUID() string
 	GetTransaction(context Context) (ITransaction, bool)
 }
