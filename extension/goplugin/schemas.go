@@ -300,7 +300,7 @@ func (schema *Schema) rawToResource(xRaw reflect.Value) interface{} {
 	resource := reflect.New(resourceType).Elem()
 	setValue(resource.FieldByName(xRaw.Type().Name()), xRaw.Addr())
 	setValue(resource.FieldByName("Schema"), reflect.ValueOf(schema))
-	setValue(resource.FieldByName("Logger"), reflect.ValueOf(NewLogger(schema.env)))
+	setValue(resource.FieldByName("Logger"), reflect.ValueOf(NewLogger()))
 	setValue(resource.FieldByName("Environment"), reflect.ValueOf(schema.env))
 	return resource.Addr().Interface()
 }
