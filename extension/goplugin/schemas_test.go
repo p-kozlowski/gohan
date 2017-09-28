@@ -79,16 +79,16 @@ var _ = Describe("Schemas", func() {
 
 	Context("Relations", func() {
 		It("Returns relation info if schema has relations", func() {
-			relations := env.Schemas().Relations(testSchema.ID())
+			relations := env.Schemas().Relations(testSuiteSchema.ID())
 			Expect(relations).To(HaveLen(1))
 			relation := relations[0]
 			Expect(relation.OnDeleteCascade).To(BeTrue())
-			Expect(relation.PropertyID).To(Equal("id"))
-			Expect(relation.SchemaID).To(Equal(testSuiteSchema.ID()))
+			Expect(relation.PropertyID).To(Equal("test_suite_id"))
+			Expect(relation.SchemaID).To(Equal(testSchema.ID()))
 		})
 
 		It("Returns empty relation info if schema has not any relations", func() {
-			relations := env.Schemas().Relations(testSuiteSchema.ID())
+			relations := env.Schemas().Relations(testSchema.ID())
 			Expect(relations).To(BeEmpty())
 		})
 	})
@@ -110,6 +110,7 @@ var _ = Describe("Schemas", func() {
 			createdResource = test.Test{
 				ID:          "some-id",
 				Description: "description",
+				TestSuiteID: nil,
 			}
 		})
 

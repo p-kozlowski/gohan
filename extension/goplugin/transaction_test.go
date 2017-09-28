@@ -75,9 +75,10 @@ var _ = Describe("Transaction", func() {
 			Expect(err).To(BeNil())
 
 			createdResource = map[string]interface{}{
-				"id":          "some-id",
-				"description": "description",
-				"subobject":   map[string]interface{}{},
+				"id":            "some-id",
+				"description":   "description",
+				"subobject":     map[string]interface{}{},
+				"test_suite_id": nil,
 			}
 		})
 
