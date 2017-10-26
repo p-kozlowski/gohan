@@ -54,7 +54,7 @@ func (a *Auth) GetTenantName(context goext.Context) string {
 		return ""
 	}
 
-	log.Warning("tenant name: %s", auth.TenantName())
+	log.Warning("tenant name: %s, id: %s, auth: %+v", auth.TenantName(), auth.TenantID(), auth)
 	return auth.TenantName()
 }
 
