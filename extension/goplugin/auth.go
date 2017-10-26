@@ -36,6 +36,8 @@ func (a *Auth) HasRole(context goext.Context, principal string) bool {
 		return false
 	}
 
+	log.Warning("role name: %s, principal: %s, match %s", role.Name, principal, role.Match(principal))
+
 	return role.Match(principal)
 }
 
@@ -52,6 +54,7 @@ func (a *Auth) GetTenantName(context goext.Context) string {
 		return ""
 	}
 
+	log.Warning("tenant name: %s", auth.TenantName())
 	return auth.TenantName()
 }
 
