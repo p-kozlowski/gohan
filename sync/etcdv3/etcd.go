@@ -328,7 +328,7 @@ func (s *Sync) Watch(path string, responseChan chan *sync.Event, stopChan chan b
 }
 
 // WatchContext keep watch update under the path until context is canceled
-func (s *Sync) WatchContext(ctx context.Context, path string, revision int64) (<-chan *sync.Event, error) {
+func (s *Sync) WatchContext(ctx context.Context, path string, revision int64) <-chan *sync.Event {
 	eventCh := make(chan *sync.Event, 32)
 	stopCh := make(chan bool)
 	errCh := make(chan error, 1)
@@ -354,7 +354,7 @@ func (s *Sync) WatchContext(ctx context.Context, path string, revision int64) (<
 		close(stopCh)
 		close(eventCh)
 	}()
-	return eventCh, nil
+	return eventCh
 }
 
 // Close closes etcd client

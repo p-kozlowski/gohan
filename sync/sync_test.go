@@ -54,15 +54,18 @@ var _ = Describe("Sync", func() {
 			gstart, gend int
 		)
 		sleepUntilAllGoroutinesAreSwept := func() {
-			// this function sleeps at most 30 secs; it checks in one-second intervals
+			// force GC to ensure any pending cleanups are done
+			runtime.GC()
+
+			// this function sleeps at most 60 secs; it checks in 10-second intervals
 			// if the number of goroutines is still decreasing which means that Go runtime
 			// is still sweeping finished goroutines
 			times := 0
 			glast := runtime.NumGoroutine()
 			for {
-				time.Sleep(time.Second)
+				time.Sleep(10 * time.Second)
 				times++
-				if times == 30 {
+				if times == 6 {
 					break
 				}
 				gnow := runtime.NumGoroutine()
@@ -131,8 +134,7 @@ var _ = Describe("Sync", func() {
 				func() {
 					ctx, cancel := context.WithCancel(context.Background())
 					defer cancel()
-					_, err := syn.WatchContext(ctx, "/some-key", int64(sync.RevisionCurrent))
-					Expect(err).To(Succeed())
+					syn.WatchContext(ctx, "/some-key", int64(sync.RevisionCurrent))
 				}()
 			}
 			// wait for all goroutines to end
