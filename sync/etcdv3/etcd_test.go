@@ -8,6 +8,7 @@ import (
 
 	gohan_sync "github.com/cloudwan/gohan/sync"
 	etcd "github.com/coreos/etcd/clientv3"
+	"runtime"
 )
 
 var endpoints = []string{"localhost:2379"}
