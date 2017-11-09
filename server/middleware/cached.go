@@ -26,8 +26,8 @@ func (c *CachedIdentityService) GetTenantName(tenantID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = c.cache.Add(tenantID, name, cache.DefaultExpiration)
-	return name, err
+	c.cache.Set(tenantID, name, cache.DefaultExpiration)
+	return name, nil
 }
 
 func (c *CachedIdentityService) VerifyToken(token string) (schema.Authorization, error) {
@@ -39,8 +39,8 @@ func (c *CachedIdentityService) VerifyToken(token string) (schema.Authorization,
 	if err != nil {
 		return nil, err
 	}
-	err = c.cache.Add(token, a, cache.DefaultExpiration)
-	return a, err
+	c.cache.Set(token, a, cache.DefaultExpiration)
+	return a, nil
 }
 
 func (c *CachedIdentityService) GetServiceAuthorization() (schema.Authorization, error) {
