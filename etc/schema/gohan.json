@@ -879,7 +879,7 @@
                 "properties": {},
                 "type": "object"
             },
-            "title": "Database status",
+            "title": "Database status"
         }
     ]
 }
