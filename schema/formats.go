@@ -118,27 +118,18 @@ func maskIsValid(mask string) bool {
 	return true
 }
 
-const (
-	pointToPointPrefixSize = 31 // https://tools.ietf.org/rfc/rfc3021.txt
-)
-
 func (f ipv4AddressWithCidrFormatChecker) IsFormat(input string) bool {
 	hostIP, netIP, mask, cidrErr := extractHostAndNet(input)
 	if cidrErr != nil {
 		return false
 	}
 
-	inputIp := extractIpFromCidrFormattedString(input)
-	if !matchYangIPv4AddressPattern(inputIp) {
+	if isBroadcast(hostIP, mask) {
 		return false
 	}
 
-	prefixSize, _ := mask.Size()
-	if prefixSize == pointToPointPrefixSize {
-		return true
-	}
-
-	if isBroadcast(hostIP, mask) {
+	inputIp := extractIpFromCidrFormattedString(input)
+	if !matchYangIPv4AddressPattern(inputIp) {
 		return false
 	}
 	return !hostIP.Equal(netIP)
